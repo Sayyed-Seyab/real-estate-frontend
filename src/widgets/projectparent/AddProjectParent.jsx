@@ -1,4 +1,4 @@
-import { StoreContext } from "@/context/context";
+import { StoreContext } from "@/context/Context";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from "react-router-dom";
