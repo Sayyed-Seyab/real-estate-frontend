@@ -1,4 +1,4 @@
-import { StoreContext } from "@/context/context";
+import { StoreContext } from "@/context/Context";
 import { Typography } from "@material-tailwind/react";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from 'react'
