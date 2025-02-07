@@ -32,5 +32,9 @@
     "prettier-plugin-tailwindcss": "0.5.6",
     "tailwindcss": "3.3.4",
     "vite": "4.5.0"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   }
 }
