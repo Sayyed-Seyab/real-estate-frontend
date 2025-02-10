@@ -19,7 +19,7 @@ const StoreContextProvider = (props) => {
     const [loading, setloading] = useState(false);
  const data = {
     id:"678f4b3b9ae39dee56d2fa44",
-    url:"http://localhost:3000"
+    url:"http://152.42.237.126:4000"
  }
  
   // Fetch cities on component mount or when language changes
