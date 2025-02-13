@@ -25,14 +25,14 @@ const AddProjectForm = () => {
         metatitle: "",
         metadesc: "",
         producttitle: "",
-        productsubtitle: "",
-        productdesc: "",
+        amenitytitle: "",
+        amenitydesc: "",
         productplantitle: "",
         sections1: [{ sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }],
         section2title: "",
         section2subtitle: "",
         section2desc: "",
-        sections2: [{ name: "", desc: "", section2image: "", section2alt: "" }],
+        sections2: [{sectiontype:"", name: "", desc: "", section2image: "", section2alt: "" }],
     });
     const [previewImage, setPreviewImage] = useState(null);
     const [projectParent] = useState([{ _id: "1", name: "Parent 1" }, { _id: "2", name: "Parent 2" }]);
@@ -134,7 +134,7 @@ const AddProjectForm = () => {
     const addSection = (sectionName) => {
         const newSection = sectionName === "sections1"
             ? { sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }
-            : { name: "", desc: "", section2image: "", section2alt: "" };
+            : { sectiontype: "",    name: "", desc: "", section2image: "", section2alt: "" };
 
         setFormData({
             ...formData,
@@ -631,21 +631,8 @@ const removeCategory = (index) => {
                                 />
                             </div>
 
-                            {/* Product Subtitle */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Product Subtitle</label>
-                                <input
-                                    type="text"
-                                    name="productsubtitle"
-                                    value={formData.productsubtitle}
-                                    onChange={handleChange}
-                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-
-                            {/* Product Plan Title */}
-                            <div className="mb-4">
+                             {/* Product Plan Title */}
+                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">Product Plan Title</label>
                                 <input
                                     type="text"
@@ -656,12 +643,25 @@ const removeCategory = (index) => {
                                 />
                             </div>
 
+                            {/* Product Subtitle */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700">Amenties Title</label>
+                                <input
+                                    type="text"
+                                    name="amenitytitle"
+                                    value={formData.amenitytitle}
+                                    onChange={handleChange}
+                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+
                             {/* Product Description */}
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Product Description</label>
+                                <label className="block text-sm font-medium text-gray-700">Amenties Description</label>
                                 <textarea
-                                    name="productdesc"
-                                    value={formData.productdesc}
+                                    name="amenitydesc"
+                                    value={formData.amenitydesc}
                                     onChange={handleChange}
                                     className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
                                 />
@@ -672,6 +672,30 @@ const removeCategory = (index) => {
                         <h3 className="text-lg font-semibold mt-6 mb-2">Sections 1</h3>
                         {formData.sections1.map((section, index) => (
                             <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
+                                
+                                {/* section type */}
+                                <div className="mb-4">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                            Selection Type:
+                        </label>
+                        <select
+                            name="sectiontype"
+                            value={section.sectiontype}
+                            onChange={(e) => handleSectionChange(e, "sections1", index)}
+                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                            required
+                        >
+                            <option value="" >
+                                Select Type
+                            </option>
+                            <option value="Hero">Hero</option>
+                            <option value="About">About</option>
+                            <option value="Location">Location</option>
+                            <option value="Background">Background</option>
+                            <option value="Associations">Associations</option>
+                            </select>
+                            </div>
+
 
                                 <div>
                                     {/* Image */}
@@ -717,17 +741,8 @@ const removeCategory = (index) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Section Type */}
-                                    <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Section Type</label>
-                                        <input
-                                            type="text"
-                                            name="sectiontype"
-                                            value={section.sectiontype}
-                                            onChange={(e) => handleSectionChange(e, "sections1", index)}
-                                            className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                                
+                                   
 
                                     {/* Title */}
                                     <div className="mb-2">
@@ -864,6 +879,26 @@ const removeCategory = (index) => {
                         {formData.sections2.map((section, index) => (
                             <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
 
+                                  {/* section type */}
+                                  <div className="mb-4">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                            Selection Type:
+                        </label>
+                        <select
+                            name="sectiontype"
+                            value={section.sectiontype}
+                            onChange={(e) => handleSectionChange(e, "sections2", index)}
+                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                            required
+                        >
+                            <option value="" >
+                                Select Type
+                            </option>
+                            <option value="Amenties">Amenties</option>
+                            <option value="Nearby">Nearby</option>
+                            </select>
+                            </div>
+
                                 <div>
                                     {/* Section Image */}
                                     <div className="mb-2">
@@ -908,7 +943,7 @@ const removeCategory = (index) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Section Name */}
                                     <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Section Name</label>
+                                        <label className="block text-sm font-medium text-gray-700"> Name</label>
                                         <input
                                             type="text"
                                             name="name"

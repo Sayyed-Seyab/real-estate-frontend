@@ -19,6 +19,8 @@ import UpdateProductForm from "@/widgets/product/UpdateProductForm";
 import AddProductPlan from "@/widgets/productplan/AddProductPlan";
 import UpdateProductPlan from "@/widgets/productplan/UpdateProductPlan";
 import BlogEditor from "@/widgets/Quill/Quill";
+import AddBlog from "@/widgets/Blogs/AddBlogForm";
+import EditBlogForm from "@/widgets/Blogs/EditBlogForm";
 
 
 export function Dashboard() {
@@ -65,7 +67,9 @@ export function Dashboard() {
         <Route path="/update-product"  element={<UpdateProductForm/>}  />
         <Route path="/add-product-plan"  element={<AddProductPlan/>}  />
         <Route path="/update-product-plan"  element={<UpdateProductPlan/>}  />
-        <Route path="/quill"  element={<BlogEditor/>}  />
+        <Route path="/add-blog"  element={<AddBlog/>}/>
+        <Route path="/update-blog"  element={<EditBlogForm/>}/>
+        <Route path="/quill"  element={<BlogEditor/>}/>
         </Routes>
 
         {/* <div className="text-blue-gray-600">

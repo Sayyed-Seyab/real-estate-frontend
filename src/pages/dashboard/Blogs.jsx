@@ -8,8 +8,8 @@ import { MdDelete } from "react-icons/md";
 import axios from 'axios';
 import { projectsData } from '@/data';
 
-export default function ProductPlan() {
-  const {data, setEditProductPlan, GetProjectProduct,  GetProductPlan, setloading, ProductPlan,  loading,  tostMsg, SetTostMsg } = useContext(StoreContext);
+export default function Blog() {
+  const {data, setloading,   GetBlogs, Blogs, loading,  tostMsg, SetTostMsg, setEditBlog, EditBlog } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
@@ -22,8 +22,8 @@ export default function ProductPlan() {
  
 
   useEffect(() => {
-    GetProductPlan();
-    console.log(ProductPlan)
+    GetBlogs();
+    console.log(Blogs)
       if (tostMsg !== null) {
           // Show toast and reset state after a delay
           const toastTimeout = setTimeout(() => {
@@ -45,9 +45,9 @@ export default function ProductPlan() {
 
 
   // Pagination logic
-  const totalPages = Math.ceil(ProductPlan.length / rowsPerPage);
+  const totalPages = Math.ceil(Blogs.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentData = ProductPlan.slice(startIndex, startIndex + rowsPerPage);
+  const currentData = Blogs.slice(startIndex, startIndex + rowsPerPage);
 
   const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
@@ -55,52 +55,43 @@ export default function ProductPlan() {
       }
   };
 
-  const hanldeAddProduct = () => {
+  const handleAddBlog = () => {
 
-      navigate("/dashboard/add-product-plan");
+      navigate("/dashboard/add-blog");
   };
-  const handleUpdateProductPlan = (productplan) => {
-    setEditProductPlan(productplan)
-    console.log(productplan);
-    navigate("/dashboard/update-product-plan")
+  const handleUpdateProjectCategory = (blog) => {
+    setEditBlog(blog)
+    console.log(EditBlog);
+      // setIsUpdateCityModalOpen(true)
+      // const findcity = cityDataAllLang.filter((item) => item._id === city._id)
+      // SetEditCity(findcity)
+      // setloading(false)
+      navigate("/dashboard/update-blog")
   }
 
   
-  const handleDelete = async (productplan) => {
-    console.log(productplan)
-    try {
-        // Step 1: Delete gallery images
-        const galleryDeletePromises = productplan.gallery.map(async (img) => {
-            console.log(img.galleryimage)
-            const res = await axios.delete(`${data.url}/api/admin/upload/productplan/${img.galleryimage}`);
-            return res.data; // Return success status
-        });
+  const handleDelete = async (blog) => {
+      try {
+        const isDltImage = await axios.delete(`${data.url}/api/admin/upload/blog/${blog.image}`)
+        if(isDltImage.data.success){
+            // toast.success(isDltImage.data.message)
+            const response = await axios.delete(`${data.url}/api/admin/blog/${blog._id}`)
+          if (response.data.success) {
+              toast.success(response.data.message)
+              GetBlogs();
 
-        // Wait for all delete requests to complete
-        const galleryResults = await Promise.all(galleryDeletePromises);
-        console.log(galleryResults)
-
-        // Check if any delete operation failed
-        if (galleryResults.includes(false)) {
-            toast.error("Failed to delete some images. Product deletion aborted.");
-            return;
+          }else{
+            toast.error(response.data.message)
+          }
+        }else{
+            toast.error(isDltImage.data.message)
         }
 
-        // Step 3: Delete the product only if all images are successfully deleted
-        const response = await axios.delete(`${data.url}/api/admin/productplan/${productplan._id}`);
-        if (response.data.success) {
-            GetProductPlan(); // Refresh the data
-            toast.success("Product deleted successfully");
-            
-        } else {
-            toast.error("Failed to delete product");
-        }
-    } catch (error) {
-        console.error("Error deleting product:", error);
-        toast.error("An error occurred while deleting the product.");
-    }
-};
-
+          
+      } catch (error) {
+         alert(error)
+      }
+  }
 
   
 
@@ -125,7 +116,7 @@ export default function ProductPlan() {
             className="mb-8 p-6 flex justify-between"
         >
             <Typography variant="h6" color="white">
-                Product && Master Plans Table
+                Project Category Table
             </Typography>
 
             <div className="flex items-center gap-4">
@@ -133,10 +124,10 @@ export default function ProductPlan() {
                 <Button
                     variant="text"
                     color="light-gray"
-                    onClick={hanldeAddProduct}
+                    onClick={handleAddBlog}
                     className="bg-gray-500  hover:bg-gray-600 text-white hidden items-center gap-1 px-4 xl:flex normal-case"
                 >
-                    ADD PRODUCT/MASTER PLAN
+                    ADD BLOG
                 </Button>
             </div>
         </CardHeader>
@@ -146,14 +137,14 @@ export default function ProductPlan() {
                                 className="text-center text-gray-500 font-medium py-8"
                                 variant="h6"
                             >
-                                No product plans available.
+                                No Blogs available.
                             </Typography>
                         ) : (
                             <>
                             <table className="w-full min-h-[0px] table-auto">
                 <thead>
                     <tr>
-                        {["Image", "Name", "Description","Status","type", "Action"].map((header) => (
+                        {["Image", "Name", "Description","Status", "Action"].map((header) => (
                             <th
                                 key={header}
                                 className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -169,13 +160,13 @@ export default function ProductPlan() {
                     </tr>
                 </thead>
                 <tbody>
-                    {currentData.map((productplan, index) => (
+                    {currentData.map((blog, index) => (
                        
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={productplan.gallery ? `${data.url}/Images/productplan/${productplan.gallery[0].galleryimage}` : "/path/to/placeholder.jpg"}
-                                            alt={productplan.gallery[0].alt}
+                                            src={blog.image ? `${data.url}/Images/blog/${blog.image}` : "/path/to/placeholder.jpg"}
+                                            alt={blog.alt}
                                             size="lg"
                                             variant="rounded"
                                             className="w-20"
@@ -184,16 +175,15 @@ export default function ProductPlan() {
                             {/* Image */}
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                             <Typography variant="small" color="blue-gray" className="font-semibold">
-                                    {productplan.name}
+                                    {blog.name}
                                 </Typography>
                             </td>
 
                             {/* City Name */}
-                            {}
                             <td className="px-5 border-b border-blue-gray-50 min-h-[100px]">
                             <div style={{width:"15rem"}}  className="overflow-y-auto cursor-pointer max-h-[50px]">
                                 <Typography variant="small" color="blue-gray" className="font-semibold">
-                                    {productplan.desc}
+                                    {blog.description}
                                 </Typography>
                                 </div>
                             </td>
@@ -202,19 +192,10 @@ export default function ProductPlan() {
                             <td className=" px-5 border-b border-blue-gray-50  min-h-[100px]">
                                
                                 <Typography  className=" text-xs font-normal text-blue-gray-500">
-                                    {productplan.status? "Active" : "Inactive"}
+                                    {blog.status? "Active" : "Inactive"}
                                 </Typography>
                                 
                             </td>
-
-                             {/* type */}
-                             <td className=" px-5 border-b border-blue-gray-50  min-h-[100px]">
-                               
-                               <Typography  className=" text-xs font-normal text-blue-gray-500">
-                                   {productplan.type}
-                               </Typography>
-                               
-                           </td>
 
                             {/* Action Icons */}
                             <td className="px-5 border-b border-blue-gray-50">
@@ -222,12 +203,12 @@ export default function ProductPlan() {
                                     <AiFillEdit
                                         className="hover:text-blue-gray-500"
                                         style={{ fontSize: "20px", cursor: "pointer" }}
-                                        onClick={() => handleUpdateProductPlan(productplan)}
+                                        onClick={() => handleUpdateProjectCategory(blog)}
                                     />
                                     <MdDelete
                                         className="hover:text-blue-gray-500"
                                         style={{ fontSize: "20px", cursor: "pointer" }}
-                                        onClick={() => handleDelete(productplan)}
+                                        onClick={() => handleDelete(blog)}
                                     />
                                     {/* <Alertmsg
                                         isOpen={isDltCityModalOpen}
@@ -280,5 +261,4 @@ export default function ProductPlan() {
     </Card>
 </div>
   )
-
 }

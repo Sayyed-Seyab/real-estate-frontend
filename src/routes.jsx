@@ -14,6 +14,7 @@ import Project from "./pages/dashboard/Project";
 import Product from "./pages/dashboard/Product";
 import AddProductPlan from "./widgets/productplan/AddProductPlan";
 import ProductPlan from "./pages/dashboard/ProductPlan";
+import Blog from "./pages/dashboard/Blogs";
 
 
 
@@ -86,8 +87,23 @@ export const routes = [
         path: "/productplans",
         element: <ProductPlan />,
       },
+
+     
     ],
    },
+
+   {
+    title: "Manage Blogs",
+    layout: "dashboard",
+    pages: [
+      {
+        icon:"",
+        name: "Blogs",
+        path: "/blogs",
+        element: <Blog/>,
+      },
+    ],
+    }
 
   // {
   //   title: "auth pages",

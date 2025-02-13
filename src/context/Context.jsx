@@ -16,10 +16,12 @@ const StoreContextProvider = (props) => {
     const [EditProduct, setEditProduct] = useState([])
     const [ProductPlan, setProductPlan] = useState([])
     const [EditProductPlan, setEditProductPlan] = useState()
+    const [Blogs, setBlogs] = useState([])
+    const [EditBlog, setEditBlog] =useState([])
     const [loading, setloading] = useState(false);
  const data = {
     id:"678f4b3b9ae39dee56d2fa44",
-    url:"https://152.42.237.126"
+     url:"https://152.42.237.126"
  }
  
   // Fetch cities on component mount or when language changes
@@ -162,12 +164,41 @@ const GetProjectParent = async () => {
     }
 };
 
+
+const GetBlogs = async () => {
+
+    try {
+        const response = await axios.get(`${data.url}/api/admin/blog`, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            withCredentials: true, // Enable credentials
+        }); 
+
+        // Safely handle the response
+        const rawData = Array.isArray(response.data.message) ? response.data.message : [];
+
+        if (rawData.length === 0) {
+           setBlogs([]); // Reset cities state to empty if no data
+            setloading(false)
+            return; // Exit early if no data
+        }
+        
+        setBlogs(rawData); // Processed data for selected language
+        setloading(false)
+    } catch (error) {
+        console.error("Error fetching project parent:", error);
+        setBlogs([]); // Reset cities state in case of an error
+    }
+};
+
     useEffect(() => {
         GetDetailProjectData();
         GetProjectParent();
         GetProjectCategories();
         GetProjectProduct();
         GetProductPlan();
+        GetBlogs();
         
     }, [])
 
@@ -197,6 +228,11 @@ const GetProjectParent = async () => {
         GetProductPlan,
         EditProductPlan,
         setEditProductPlan,
+        GetBlogs,
+        Blogs,
+        setBlogs,
+        setEditBlog,
+        EditBlog,
     }
     return (
         <StoreContext.Provider value={ContextValue}>

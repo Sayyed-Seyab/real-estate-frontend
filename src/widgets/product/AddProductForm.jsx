@@ -10,6 +10,7 @@ const AddProductForm = () => {
     // State for form data
     const [formData, setFormData] = useState({
         projectid: "",
+        type:"",
         name: "",
         desc: "",
         gallery: [{ galleryimage: "", alt: "" }],
@@ -269,9 +270,30 @@ const AddProductForm = () => {
                         </div>
                     </div>
 
+                    <div className="mb-4">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                            Select Type:
+                        </label>
+                        <select
+                            name="type"
+                            value={formData.type}
+                            onChange={handleChange}
+                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                            required
+                        >
+                            <option value="" >
+                                Select Type
+                            </option>
+                            <option value="Product">Product</option>
+                            <option value="Immersive amenties">Immersive amenties</option>
+                            <option value="Nearby">NearBy</option>
+                            </select>
+                            </div>
+                            
+
                     {/* Amenities Field */}
                     <div className=" space-y-2  gap-5 mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Amenities</label>
+                        <label className="block text-sm font-medium text-gray-700">{formData.type ==="Product"}Amenities</label>
                         {formData.amenties.map((amenity, index) => (
                             <div key={index} className="mt-2 ">
                                 <div className="mb-4">

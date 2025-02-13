@@ -11,12 +11,13 @@ const AddProductPlan = () => {
 
     // State for form data
     const [formData, setFormData] = useState({
+        type:"",
         productid: "",
         name: "",
         desc: "",
         gallery: [{ galleryimage: "", alt: "" }],
         video: "",
-        area: [{ planareatype: "", value:""}],
+        plans: [{ name: "", desc:""}],
         status: null,
         metatitle: "",
         metadesc: "",
@@ -68,12 +69,12 @@ const AddProductPlan = () => {
     const handleAreaChange = (e, index) => {
         const { name, value } = e.target;
 
-        const updatedArea = [...formData.area]
+        const updatedArea = [...formData.plans]
          updatedArea[index][name] = value
 
         setFormData({
             ...formData,
-            area: updatedArea,
+            plans: updatedArea,
         });
     };
 
@@ -81,7 +82,7 @@ const AddProductPlan = () => {
     const addArea = () => {
         setFormData({
             ...formData,
-            area: [...formData.area, { planareatype: "", value:"" }],
+            plans: [...formData.area, { name: "", desc:"" }],
         });
     };
 
@@ -89,7 +90,7 @@ const AddProductPlan = () => {
     const removeArea = (index) => {
         setFormData((prev) => ({
             ...prev,
-            area: prev.area.filter((_, i) => i !== index),
+            plans: prev.plans.filter((_, i) => i !== index),
         }));
     };
 
@@ -171,7 +172,7 @@ const AddProductPlan = () => {
     return (
         <div>
             <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4 text-center">Add Product Plan</h2>
+                <h2 className="text-xl font-bold mb-4 text-center">Add Product Plan or Master Plan</h2>
                 <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
 
                      {/* Gallery Images Field */}
@@ -232,6 +233,25 @@ const AddProductPlan = () => {
                         </div>
                     </div>
 
+                    <div className="mb-4">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                            Select Type:
+                        </label>
+                        <select
+                            name="type"
+                            value={formData.type}
+                            onChange={handleChange}
+                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                            required
+                        >
+                            <option value="" >
+                                Select Type
+                            </option>
+                            <option value="Product plan">Product plan</option>
+                            <option value="Master plan">Master plan</option>
+                            </select>
+                            </div>
+
                     {/* Project ID Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -260,7 +280,7 @@ const AddProductPlan = () => {
                     {/* Name Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Product Plan Name
+                           {formData.type == 'Product plan'? 'Product Plan Name': 'Master Plan Name'} 
                         </label>
                         <input
                             type="text"
@@ -276,7 +296,7 @@ const AddProductPlan = () => {
                     {/* Description Field */}
                     <div className="mb-4">
                         <label htmlFor="desc" className="block text-sm font-medium text-gray-700">
-                            Product Plan Description
+                          {formData.type == 'Product plan'? 'Product Plan Description' :'Master Plan Description'}  
                         </label>
                         <textarea
                             id="desc"
@@ -294,7 +314,7 @@ const AddProductPlan = () => {
                     {/* Video Field */}
                     <div className="mb-4">
                         <label htmlFor="video" className="block text-sm font-medium text-gray-700">
-                            Product Plan Video URL
+                          {formData.type == 'Product plan' ? 'Product Plan Video URL': 'Master Plan Video URL'}
                         </label>
                         <input
                             type="text"
@@ -308,16 +328,16 @@ const AddProductPlan = () => {
 
                     {/* Area Field */}
                     <div className="space-y-2 gap-5 mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Product Plan Areas</label>
-                        {formData.area.map((area, index) => (
+                        <label className="block text-sm font-medium text-gray-700">{formData.type == 'Product plan' ?'Product Plan Areas' : 'Master Plan Areas'}</label>
+                        {formData.plans.map((area, index) => (
                             <div key={index} className="mt-2">
                                 <div className="">
                                     <input
                                         type="text"
-                                        name="planareatype"
-                                        value={area.planareatype}
+                                        name="name"
+                                        value={area.name}
                                         onChange={(e) => handleAreaChange(e, index)}
-                                        placeholder="Plan Area type"
+                                        placeholder={formData.type == 'Product plan'? 'Plan Area type' : "title"}
                                         className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         required
                                     />
@@ -326,10 +346,10 @@ const AddProductPlan = () => {
                                 <div className="">
                                     <input
                                         type="text"
-                                        name="value"
-                                        value={area.value}
+                                        name="desc"
+                                        value={area.desc}
                                         onChange={(e) => handleAreaChange(e, index)}
-                                        placeholder="Plan Area value"
+                                        placeholder={formData.type == 'Product plan'? 'Plan Area value' : 'sub title'}
                                         className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                        
                                     />
@@ -344,7 +364,7 @@ const AddProductPlan = () => {
                                             onClick={addArea}
                                             className="p-2 bg-gray-500 text-white rounded-md mt-4 hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
                                         >
-                                            Add Area
+                                           {formData.type == 'Product plan'? 'Add Area' : 'Add Point'} 
                                         </Button>
                                     </div>
 
@@ -366,7 +386,7 @@ const AddProductPlan = () => {
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Product Plan Status</label>
+                        <label className="block text-sm font-medium text-gray-700"> {formData.type =='Product plan'? 'Product Plan Status':'Master Plan Status'} </label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
