@@ -2,11 +2,11 @@ import React, { useRef } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-import Quill from "quill";
-import ImageCompress from "quill-image-compress"; // Import ImageCompress module
+// import Quill from "quill";
+// import ImageCompress from "quill-image-compress"; // Import ImageCompress module
 
-// Register the module
-Quill.register("modules/imageCompress", ImageCompress);
+// // Register the module
+// Quill.register("modules/imageCompress", ImageCompress);
 
 
 const BlogEditor = ({ handleChange, detaildesc }) => {
