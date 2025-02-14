@@ -11,13 +11,14 @@ const AddProductPlan = () => {
 
     // State for form data
     const [formData, setFormData] = useState({
-        type:"",
+        type: "",
         productid: "",
         name: "",
         desc: "",
         gallery: [{ galleryimage: "", alt: "" }],
         video: "",
-        plans: [{ name: "", desc:""}],
+        plans: [{ name: "", desc: "" }],
+        file: "",
         status: null,
         metatitle: "",
         metadesc: "",
@@ -70,7 +71,7 @@ const AddProductPlan = () => {
         const { name, value } = e.target;
 
         const updatedArea = [...formData.plans]
-         updatedArea[index][name] = value
+        updatedArea[index][name] = value
 
         setFormData({
             ...formData,
@@ -82,7 +83,7 @@ const AddProductPlan = () => {
     const addArea = () => {
         setFormData({
             ...formData,
-            plans: [...formData.area, { name: "", desc:"" }],
+            plans: [...formData.area, { name: "", desc: "" }],
         });
     };
 
@@ -94,13 +95,13 @@ const AddProductPlan = () => {
         }));
     };
 
-    const handleRemoveImage = (index)=>{
-        const updateGallery = formData.gallery.filter((_, idx)=> idx !== index)
+    const handleRemoveImage = (index) => {
+        const updateGallery = formData.gallery.filter((_, idx) => idx !== index)
 
-     setFormData((prev)=>({
-        ...prev,
-        gallery: updateGallery
-     }))
+        setFormData((prev) => ({
+            ...prev,
+            gallery: updateGallery
+        }))
     }
 
     // Handle form submission
@@ -109,11 +110,11 @@ const AddProductPlan = () => {
 
         try {
             // Prepare promises for uploading gallery images
-           const GalleryImagetoUpload = formData.gallery.map(async (img, index)=>{
-            if(img.galleryimage instanceof File){
-                const newImage = new FormData();
-                newImage.append('file', img.galleryimage)
-                 const response = await axios.post(
+            const GalleryImagetoUpload = formData.gallery.map(async (img, index) => {
+                if (img.galleryimage instanceof File) {
+                    const newImage = new FormData();
+                    newImage.append('file', img.galleryimage)
+                    const response = await axios.post(
                         `${data.url}/api/admin/upload/productplan`,
                         newImage,
                         {
@@ -122,22 +123,22 @@ const AddProductPlan = () => {
                             },
                         });
                     return response.data.file; // Assuming the response contains the uploaded image URL
-            }
-            return img.galleryimage; // If no file, return the current value (could be URL)
-           })
+                }
+                return img.galleryimage; // If no file, return the current value (could be URL)
+            })
 
-                   
-                  
-         
+
+
+
 
             // Wait for all image uploads to complete
             const galleryImageUrls = await Promise.all(GalleryImagetoUpload);
 
             // Update gallery with the uploaded image URLs
-          const updatedGallery = formData.gallery.map((img, index)=> ({
-            ...img,
-            galleryimage: galleryImageUrls[index] || img.galleryimage
-          }))
+            const updatedGallery = formData.gallery.map((img, index) => ({
+                ...img,
+                galleryimage: galleryImageUrls[index] || img.galleryimage
+            }))
             // Update formData with the new image URLs
             const updatedFormData = {
                 ...formData,
@@ -163,11 +164,69 @@ const AddProductPlan = () => {
         }
     };
 
-    useEffect(()=>{
+
+    
+
+    useEffect(() => {
         GetProjectProduct();
         console.log(ProjectProduct)
         console.log(formData)
-    },[formData])
+    }, [formData])
+
+    // Handle File Upload
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0]; // Get the selected file
+        if (!file) return;
+
+        const fileData = new FormData();
+        fileData.append("file", file);
+
+        try {
+            const response = await axios.post(`${data.url}/api/admin/upload/productplan`, fileData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (response.data.success) {
+                const fileUrl = response.data.file; // Get uploaded file URL
+
+                setFormData((prevData) => ({
+                    ...prevData,
+                    file: fileUrl, // Store file URL in formData.file
+                }));
+
+                toast.success("File uploaded successfully!");
+                console.log("Uploaded File URL:", fileUrl);
+            } else {
+                toast.error("File upload failed.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error uploading file.");
+        }
+    };
+
+
+    const handleDeleteFile = async () => {
+        if (!formData.file) {
+            alert("No file to delete");
+            return;
+        }
+    
+        try {
+            const response = await axios.delete(`${data.url}/api/admin/upload/productplan/${formData.file}`);
+    
+            if (response.data.success) {
+                setFormData((prev) => ({ ...prev, file: "" })); // Remove file from formData
+                alert("File deleted successfully!");
+            } else {
+                alert("Error deleting file");
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            alert("Error deleting file");
+        }
+    };
+    
 
     return (
         <div>
@@ -175,8 +234,37 @@ const AddProductPlan = () => {
                 <h2 className="text-xl font-bold mb-4 text-center">Add Product Plan or Master Plan</h2>
                 <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
 
-                     {/* Gallery Images Field */}
-                     <div className="space-y-2 mb-4">
+                <div>
+            {/* File Upload Input */}
+            <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+            <input
+                type="file"
+                accept=".pdf,.txt,.doc,.docx" // Restrict file types
+                onChange={handleFileUpload}
+                className="hidden"
+            />
+             <span className="text-gray-700">Upload File (PDF, TXT, etc.)</span>
+             </label>
+            {/* Show uploaded file URL */}
+            {formData.file && (
+                <div className="mt-4">
+                    <p className="text-green-600 font-medium">File Uploaded:</p>
+                    <a href={`${data.url}/Files/${formData.file}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                        {formData.file}
+                    </a>
+                  {/* Delete File Button */}
+            <button
+                onClick={handleDeleteFile}
+                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+            >
+                Delete
+            </button>
+                </div>
+            )}
+        </div>
+
+                    {/* Gallery Images Field */}
+                    <div className="space-y-2 mb-4 mt-4">
                         <Typography variant="small" className="font-medium">
                             Gallery Images
                         </Typography>
@@ -201,21 +289,21 @@ const AddProductPlan = () => {
                                     {/* Image */}
                                     {image.galleryimage instanceof File ? (
                                         <div>
-                                           <div className="relative">
-                                           <img
-                                                src={URL.createObjectURL(image.galleryimage)}
-                                                alt={image.alt || "Uploaded image"}
-                                                className="h-32 w-full object-cover rounded-lg border"
-                                            />
-                                            {/* Remove Button (only visible on hover) */}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveImage(index)}
-                                                className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                Remove
-                                            </button>
-                                           </div>
+                                            <div className="relative">
+                                                <img
+                                                    src={URL.createObjectURL(image.galleryimage)}
+                                                    alt={image.alt || "Uploaded image"}
+                                                    className="h-32 w-full object-cover rounded-lg border"
+                                                />
+                                                {/* Remove Button (only visible on hover) */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage(index)}
+                                                    className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
 
                                             {/* Alt Text Input */}
                                             <input
@@ -233,6 +321,9 @@ const AddProductPlan = () => {
                         </div>
                     </div>
 
+
+
+
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                             Select Type:
@@ -249,8 +340,8 @@ const AddProductPlan = () => {
                             </option>
                             <option value="Product plan">Product plan</option>
                             <option value="Master plan">Master plan</option>
-                            </select>
-                            </div>
+                        </select>
+                    </div>
 
                     {/* Project ID Field */}
                     <div className="mb-4">
@@ -276,11 +367,16 @@ const AddProductPlan = () => {
 
                         </select>
                     </div>
+                  
+   
+
+               
+
 
                     {/* Name Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                           {formData.type == 'Product plan'? 'Product Plan Name': 'Master Plan Name'} 
+                            {formData.type == 'Product plan' ? 'Product Plan Name' : 'Master Plan Name'}
                         </label>
                         <input
                             type="text"
@@ -296,7 +392,7 @@ const AddProductPlan = () => {
                     {/* Description Field */}
                     <div className="mb-4">
                         <label htmlFor="desc" className="block text-sm font-medium text-gray-700">
-                          {formData.type == 'Product plan'? 'Product Plan Description' :'Master Plan Description'}  
+                            {formData.type == 'Product plan' ? 'Product Plan Description' : 'Master Plan Description'}
                         </label>
                         <textarea
                             id="desc"
@@ -309,12 +405,12 @@ const AddProductPlan = () => {
                         ></textarea>
                     </div>
 
-                   
+
 
                     {/* Video Field */}
                     <div className="mb-4">
                         <label htmlFor="video" className="block text-sm font-medium text-gray-700">
-                          {formData.type == 'Product plan' ? 'Product Plan Video URL': 'Master Plan Video URL'}
+                            {formData.type == 'Product plan' ? 'Product Plan Video URL' : 'Master Plan Video URL'}
                         </label>
                         <input
                             type="text"
@@ -328,7 +424,7 @@ const AddProductPlan = () => {
 
                     {/* Area Field */}
                     <div className="space-y-2 gap-5 mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{formData.type == 'Product plan' ?'Product Plan Areas' : 'Master Plan Areas'}</label>
+                        <label className="block text-sm font-medium text-gray-700">{formData.type == 'Product plan' ? 'Product Plan Areas' : 'Master Plan Areas'}</label>
                         {formData.plans.map((area, index) => (
                             <div key={index} className="mt-2">
                                 <div className="">
@@ -337,7 +433,7 @@ const AddProductPlan = () => {
                                         name="name"
                                         value={area.name}
                                         onChange={(e) => handleAreaChange(e, index)}
-                                        placeholder={formData.type == 'Product plan'? 'Plan Area type' : "title"}
+                                        placeholder={formData.type == 'Product plan' ? 'Plan Area type' : "title"}
                                         className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         required
                                     />
@@ -349,9 +445,9 @@ const AddProductPlan = () => {
                                         name="desc"
                                         value={area.desc}
                                         onChange={(e) => handleAreaChange(e, index)}
-                                        placeholder={formData.type == 'Product plan'? 'Plan Area value' : 'sub title'}
+                                        placeholder={formData.type == 'Product plan' ? 'Plan Area value' : 'sub title'}
                                         className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                       
+
                                     />
                                 </div>
 
@@ -364,7 +460,7 @@ const AddProductPlan = () => {
                                             onClick={addArea}
                                             className="p-2 bg-gray-500 text-white rounded-md mt-4 hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
                                         >
-                                           {formData.type == 'Product plan'? 'Add Area' : 'Add Point'} 
+                                            {formData.type == 'Product plan' ? 'Add Area' : 'Add Point'}
                                         </Button>
                                     </div>
 
@@ -386,7 +482,7 @@ const AddProductPlan = () => {
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700"> {formData.type =='Product plan'? 'Product Plan Status':'Master Plan Status'} </label>
+                        <label className="block text-sm font-medium text-gray-700"> {formData.type == 'Product plan' ? 'Product Plan Status' : 'Master Plan Status'} </label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input

@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 const AddProjectForm = () => {
     const navigate = useNavigate()
-    const { data, ProjectCategories, EditProject } = useContext(StoreContext)
+    const { data, ProjectCategories, EditProject,SetTostMsg } = useContext(StoreContext)
     const [step, setStep] = useState(1); // Track the current part of the form
     const [previewgallery, setpreviewgallery] = useState({
         gallery: ""
@@ -34,7 +34,7 @@ const AddProjectForm = () => {
         productsubtitle: "",
         productdesc: "",
         productplantitle: "",
-        sections1: [{ sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }],
+        sections1: [{ sectiontype: "", title: "", subtitle: "", desc: "", gallery: [], section1alt: "" }],
         section2title: "",
         section2subtitle: "",
         section2desc: "",
@@ -64,7 +64,7 @@ const AddProjectForm = () => {
                 productsubtitle: EditProject.productsubtitle || "",
                 productdesc: EditProject.productdesc || "",
                 productplantitle: EditProject.productplantitle || "",
-                sections1: EditProject.sections1 || [{ sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }],
+                sections1: EditProject.sections1 || [{ sectiontype: "", title: "", subtitle: "", desc: "", gallery: [] }],
                 section2title: EditProject.section2title || "",
                 section2subtitle: EditProject.section2subtitle || "",
                 section2desc: EditProject.section2desc || "",
@@ -84,6 +84,204 @@ const AddProjectForm = () => {
 
         console.log(ImagesToDlt);
     }, [EditProject, data.url, ImagesToDlt]);
+
+
+
+    const handleImageUploadSection1 = async (e, sectionIndex) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        const uploadedImages = [];
+
+        for (const file of files) {
+            const imageData = new FormData();
+            imageData.append("file", file);
+
+            try {
+                const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+
+                if (response.data.success) {
+                    uploadedImages.push({ section1image: response.data.file, section1alt: "" });
+                } else {
+                    toast.error(`Failed to upload ${file.name}`);
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                toast.error(`Error uploading ${file.name}`);
+            }
+        }
+        if (uploadedImages.length > 0) {
+            setFormData((prevData) => ({
+                ...prevData,
+                sections1: prevData.sections1.map((section, idx) =>
+                    idx === sectionIndex
+                        ? { ...section, gallery: [...section.gallery, ...uploadedImages] }
+                        : section
+                ),
+            }));
+
+            toast.success("Images uploaded successfully!");
+        }
+    };
+
+
+    // Handle image deletion for Section 1
+    const handleDeleteImageSection1 = async (sectionIndex, imageIndex) => {
+        try {
+            const imageUrl = formData.sections1[sectionIndex]?.gallery[imageIndex]?.section1image;
+            if (!imageUrl) {
+                toast.error("No image found to delete.");
+                return;
+            }
+
+            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`);
+
+            setFormData((prevData) => ({
+                ...prevData,
+                sections1: prevData.sections1.map((section, secIdx) =>
+                    secIdx === sectionIndex
+                        ? {
+                            ...section,
+                            gallery: section.gallery.filter((_, imgIdx) => imgIdx !== imageIndex),
+                        }
+                        : section
+                ),
+            }));
+            toast.success("Image deleted successfully!");
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error deleting image.");
+        }
+    };
+
+
+
+    const handleImageUpload = async (e) => {
+
+        const files = e.target.files;
+        if (!files.length) return;
+
+        const uploadPromises = Array.from(files).map(async (file) => {
+            const imageData = new FormData();
+            imageData.append("file", file);
+
+            try {
+                const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+
+                console.log(response)
+                if (response.data.success) {
+
+                    return { galleryimage: response.data.file, alt: "" }; // Store image URL in `galleryimage`
+
+                } else {
+                    toast.error("Image upload failed.");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                toast.error("Error uploading image.");
+                return null;
+            }
+        });
+
+        const uploadedImages = (await Promise.all(uploadPromises)).filter(Boolean); // Remove any failed uploads
+
+        setFormData((prevData) => ({
+            ...prevData,
+            gallery: [...prevData.gallery, ...uploadedImages], // Append new images
+        }));
+        setfile(true)
+        console.log(uploadedImages);
+    };
+
+    const handleImageUploadSection2 = async (e, index) => {
+        const file = e.target.files[0]; // Get first file
+        if (!file) return;
+
+        const imageData = new FormData();
+        imageData.append("file", file);
+
+        try {
+            const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (response.data.success) {
+                const imageUrl = response.data.file; // Get uploaded image URL
+
+                // Update the specific index in sections1 array
+                setFormData((prevData) => ({
+                    ...prevData,
+                    sections2: prevData.sections2.map((section, i) =>
+                        i === index ? { ...section, section2image: imageUrl } : section
+                    ),
+                }));
+
+                console.log("Uploaded Image URL:", imageUrl);
+            } else {
+                toast.error("Image upload failed.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error uploading image.");
+        }
+    };
+
+    const handleDeleteImageSection2 = async (index) => {
+        try {
+            // Get the image URL to delete
+            const imageUrl = formData.sections2[index].section2image;
+            if (!imageUrl) return;
+
+            // Send request to delete image from the server
+            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`)
+
+            // Update formData to remove the image
+            setFormData((prevData) => ({
+                ...prevData,
+                sections2: prevData.sections2.map((section, i) =>
+                    i === index ? { ...section, section2image: "" } : section
+                ),
+            }));
+
+            toast.success("Image deleted successfully!");
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error deleting image.");
+        }
+    };
+
+
+
+
+    const HandleRemoveImage = async (imageUrl) => {
+
+        try {
+            const response = await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl.galleryimage}`, {
+            });
+            if (response.data.success) {
+                setFormData((prev) => ({
+                    ...prev,
+                    gallery: [
+                        ...prev.gallery.filter((item) => item.galleryimage !== imageUrl.galleryimage), // Remove empty object
+
+                    ],
+                }));
+                toast.success("Image deleted.");
+            } else {
+                toast.error("Failed to delete image.");
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error deleting image.");
+        }
+    };
+
+
 
     // Handle form field changes
     const handleChange = (e) => {
@@ -164,7 +362,7 @@ const AddProjectForm = () => {
     // Add a new section (either sections1 or sections2)
     const addSection = (sectionName) => {
         const newSection = sectionName === "sections1"
-            ? { sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }
+            ? { sectiontype: "", title: "", subtitle: "", desc: "", gallery: [{ section1image: "", section1alt: "" }] }
             : { name: "", desc: "", section2image: "", section2alt: "" };
 
         setFormData({
@@ -236,127 +434,127 @@ const AddProjectForm = () => {
 
 
 
-         // Step 1: Find images to delete
-    const imagesToDelete = EditProject.gallery.filter(
-        (img) =>
-            !formData.gallery.some(
-                (dltimage) => !(dltimage.galleryimage instanceof File) && dltimage.galleryimage === img.galleryimage
-            )
-    );
+        // Step 1: Find images to delete
+        // const imagesToDelete = EditProject.gallery.filter(
+        //     (img) =>
+        //         !formData.gallery.some(
+        //             (dltimage) => !(dltimage.galleryimage instanceof File) && dltimage.galleryimage === img.galleryimage
+        //         )
+        // );
 
 
-        const sec1imagesToDelete = EditProject.sections1.filter(
-            (img) =>
-                !formData.sections1.some((dltimage) => !(dltimage.section1image instanceof File) && dltimage.section1image === img.section1image)
-        );
+        // const sec1imagesToDelete = EditProject.sections1.filter(
+        //     (img) =>
+        //         !formData.sections1.some((dltimage) => !(dltimage.section1image instanceof File) && dltimage.section1image === img.section1image)
+        // );
 
 
-        const Sec2imagesToDelete = EditProject.sections2.filter(
-            (img) =>
-                !formData.sections2.some((dltimage) => !(dltimage.section2image instanceof File) && dltimage.section2image === img.section2image)
-        );
+        // const Sec2imagesToDelete = EditProject.sections2.filter(
+        //     (img) =>
+        //         !formData.sections2.some((dltimage) => !(dltimage.section2image instanceof File) && dltimage.section2image === img.section2image)
+        // );
 
-        console.log(imagesToDelete)
-        console.log(sec1imagesToDelete)
-        console.log(Sec2imagesToDelete)
-         // Combine all images to delete
-    const imagesToDeleteArray = [
-        ...imagesToDelete.map((img) => ({ file: img.galleryimage })),
-        ...sec1imagesToDelete.map((img) => ({ file: img.section1image })),
-        ...Sec2imagesToDelete .map((img) => ({ file: img.section2image }))
-    ];
-console.log(imagesToDeleteArray)
-       
-        
-       
+        // console.log(imagesToDelete)
+        // console.log(sec1imagesToDelete)
+        // console.log(Sec2imagesToDelete)
+        // Combine all images to delete
+        // const imagesToDeleteArray = [
+        //     ...imagesToDelete.map((img) => ({ file: img.galleryimage })),
+        //     ...sec1imagesToDelete.map((img) => ({ file: img.section1image })),
+        //     ...Sec2imagesToDelete.map((img) => ({ file: img.section2image }))
+        // ];
+        // console.log(imagesToDeleteArray)
+
+
+
 
         try {
 
-        //      // 1️⃣ **Delete Images First**
-        if(imagesToDeleteArray.length > 0){
-            console.log(imagesToDeleteArray)
-          const response =   await Promise.all(
-                imagesToDeleteArray.map(async (file) => {
-                    console.log(file)
-                   const res =  await axios.delete(`${data.url}/api/admin/upload/project/${file.file}`);
-                   console.log(res)
-                })
-            );
+            //      // 1️⃣ **Delete Images First**
+            // if (imagesToDeleteArray.length > 0) {
+            //     console.log(imagesToDeleteArray)
+            //     const response = await Promise.all(
+            //         imagesToDeleteArray.map(async (file) => {
+            //             console.log(file)
+            //             const res = await axios.delete(`${data.url}/api/admin/upload/project/${file.file}`);
+            //             console.log(res)
+            //         })
+            //     );
 
-           if(response){
-              console.log(response)
-            }
-        }
+            //     if (response) {
+            //         console.log(response)
+            //     }
+            // }
 
             // Prepare promises for uploading gallery, section1images, and section2images
-            const galleryImagePromises = formData.gallery.map(async (image) => {
-                if (image.galleryimage instanceof File) {
-                    const formDataImage = new FormData();
-                    formDataImage.append('file', image.galleryimage);
+            // const galleryImagePromises = formData.gallery.map(async (image) => {
+            //     if (image.galleryimage instanceof File) {
+            //         const formDataImage = new FormData();
+            //         formDataImage.append('file', image.galleryimage);
 
-                    const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
-                    return response.data.file; // Assuming the response contains the uploaded image URL
-                }
-                return image.galleryimage; // If no file, return the current value (could be URL)
-            });
+            //         const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
+            //             headers: {
+            //                 'Content-Type': 'multipart/form-data',
+            //             },
+            //         });
+            //         return response.data.file; // Assuming the response contains the uploaded image URL
+            //     }
+            //     return image.galleryimage; // If no file, return the current value (could be URL)
+            // });
 
-            const section1ImagePromises = formData.sections1.map(async (section) => {
-                if (section.section1image instanceof File) {
-                    const formDataImage = new FormData();
-                    formDataImage.append('file', section.section1image);
+            // const section1ImagePromises = formData.sections1.map(async (section) => {
+            //     if (section.section1image instanceof File) {
+            //         const formDataImage = new FormData();
+            //         formDataImage.append('file', section.section1image);
 
-                    const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
-                    return response.data.file; // Assuming the response contains the uploaded image URL
-                }
-                return section.section1image; // If no file, return the current value (could be URL)
-            });
+            //         const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
+            //             headers: {
+            //                 'Content-Type': 'multipart/form-data',
+            //             },
+            //         });
+            //         return response.data.file; // Assuming the response contains the uploaded image URL
+            //     }
+            //     return section.section1image; // If no file, return the current value (could be URL)
+            // });
 
-            const section2ImagePromises = formData.sections2.map(async (section) => {
-                if (section.section2image instanceof File) {
-                    const formDataImage = new FormData();
-                    formDataImage.append('file', section.section2image);
+            // const section2ImagePromises = formData.sections2.map(async (section) => {
+            //     if (section.section2image instanceof File) {
+            //         const formDataImage = new FormData();
+            //         formDataImage.append('file', section.section2image);
 
-                    const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
-                    return response.data.file; // Assuming the response contains the uploaded image URL
-                }
-                return section.section2image; // If no file, return the current value (could be URL)
-            });
+            //         const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
+            //             headers: {
+            //                 'Content-Type': 'multipart/form-data',
+            //             },
+            //         });
+            //         return response.data.file; // Assuming the response contains the uploaded image URL
+            //     }
+            //     return section.section2image; // If no file, return the current value (could be URL)
+            // });
 
             // Wait for all image uploads to complete
-            const galleryImageUrls = await Promise.all(galleryImagePromises);
-            const section1ImageUrls = await Promise.all(section1ImagePromises);
-            const section2ImageUrls = await Promise.all(section2ImagePromises);
+            // const galleryImageUrls = await Promise.all(galleryImagePromises);
+            // const section1ImageUrls = await Promise.all(section1ImagePromises);
+            // const section2ImageUrls = await Promise.all(section2ImagePromises);
 
             // Update sections and gallery with the uploaded image URLs
-            const updatedGallery = formData.gallery.map((image, index) => ({
-                ...image,
-                galleryimage: galleryImageUrls[index] 
-            }));
+            // const updatedGallery = formData.gallery.map((image, index) => ({
+            //     ...image,
+            //     galleryimage: galleryImageUrls[index]
+            // }));
 
-            const updatedSections1 = formData.sections1.map((section, index) => ({
-                ...section,
-                section1image: section1ImageUrls[index] 
-            }));
+            // const updatedSections1 = formData.sections1.map((section, index) => ({
+            //     ...section,
+            //     section1image: section1ImageUrls[index]
+            // }));
 
-            const updatedSections2 = formData.sections2.map((section, index) => ({
-                ...section,
-                section2image: section2ImageUrls[index] 
-            }));
+            // const updatedSections2 = formData.sections2.map((section, index) => ({
+            //     ...section,
+            //     section2image: section2ImageUrls[index]
+            // }));
 
 
-             // 🔹 4️⃣ **Prepare Updated Data (Avoid State Delay)**
+            // 🔹 4️⃣ **Prepare Updated Data (Avoid State Delay)**
             //  const updatedData = {
             //     ...formData,
             //     gallery: formData.gallery.map((img, i) => ({
@@ -374,26 +572,28 @@ console.log(imagesToDeleteArray)
             // };
 
             // Update formData with the new image URLs
-            const updatedFormData = {
-                ...formData,
-                gallery: updatedGallery,
-                sections1: updatedSections1,
-                sections2: updatedSections2
-            };
-    
-            setFormData(updatedFormData);
-            console.log(updatedFormData)
+            // const updatedFormData = {
+            //     ...formData,
+            //     gallery: updatedGallery,
+            //     sections1: updatedSections1,
+            //     sections2: updatedSections2
+            // };
+
+            // setFormData(updatedFormData);
+            // console.log(updatedFormData)
 
             // Send the updated form data to your API
-            const response = await axios.put(`${data.url}/api/admin/project/${EditProject._id}`, updatedFormData);
+            const response = await axios.put(`${data.url}/api/admin/project/${EditProject._id}`, formData);
             console.log(response)
-            // if (response.data.success) {
-            //     console.log('Project added successfully:', response.data);
-            //     // Handle success (e.g., redirect, show success message, etc.)
-            // } else {
-            //     console.error('Error adding project:', response.data);
-            //     // Handle error (e.g., show error message)
-            // }
+            if (response.data.success) {
+                console.log('Project added successfully:', response.data);
+                SetTostMsg(response.data.message);
+                navigate('/dashboard/project')
+                // Handle success (e.g., redirect, show success message, etc.)
+            } else {
+                console.error('Error adding project:', response.data);
+                // Handle error (e.g., show error message)
+            }
         } catch (error) {
             console.error('Error in form submission:', error);
             // Handle error (e.g., show error message)
@@ -401,12 +601,12 @@ console.log(imagesToDeleteArray)
     };
 
 
-    useEffect(() => {
-        console.log(ImagesToDlt)
-        if (ImagesToDlt.length > 0) {
-            alert('Image to delete');
-        }
-    }, [ImagesToDlt]); // Watches for changes in the images array of ImagesToDlt
+    // useEffect(() => {
+    //     console.log(ImagesToDlt)
+    //     if (ImagesToDlt.length > 0) {
+    //         alert('Image to delete');
+    //     }
+    // }, [ImagesToDlt]); // Watches for changes in the images array of ImagesToDlt
 
     // Render the form based on the current step
     return (
@@ -415,6 +615,7 @@ console.log(imagesToDeleteArray)
                 {step === 1 && (
                     <div className="mt-10 bg-white p-6 rounded-md shadow-md">
                         <h2 className="text-xl font-bold mb-4 text-center">Update Project </h2>
+                        {/* Project Image */}
                         {/* Project Image */}
                         <div className="space-y-2 mb-4">
                             <Typography variant="small" className="font-medium">
@@ -426,21 +627,21 @@ console.log(imagesToDeleteArray)
                                     accept="image/*"
                                     multiple // Allow multiple file selection
                                     name="image"
-                                    onChange={handleImageChange}
+                                    onChange={handleImageUpload}
                                     className="hidden"
                                 />
                                 <span className="text-gray-700">Choose a file</span>
                             </label>
                             {/* Display Image Previews with Alt Inputs */}
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {formData.gallery ? formData.gallery.map((image, index) => (
+                                {formData.gallery ? formData.gallery?.map((image, index) => (
                                     <div
                                         key={index}
-                                        className="relative flex flex-col items-center space-y-2 group"
+                                        className="relative flex flex-col  space-y-2 group"
                                     >
                                         {/* Image */}
                                         <img
-                                            src={image.galleryimage instanceof File ? URL.createObjectURL(image.galleryimage) : `${data.url}/Images/project/${image.galleryimage}`}
+                                            src={`${data.url}/Images/project/${image.galleryimage}`}
                                             alt={image.alt || "Uploaded image"}
                                             className="h-32 w-full object-cover rounded-lg border"
                                         />
@@ -448,7 +649,7 @@ console.log(imagesToDeleteArray)
                                         {/* Remove Button (only visible on hover) */}
                                         <button
                                             type="button"
-                                            onClick={() => handleRemoveImage(index)}
+                                            onClick={() => HandleRemoveImage(image)}
                                             className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             Remove
@@ -459,16 +660,11 @@ console.log(imagesToDeleteArray)
                                             type="text"
                                             placeholder="Enter alt text"
                                             name="alt"
-                                            value={image.alt}
                                             onChange={(e) => handleAltChange(index, e.target.value)}
                                             className="w-full px-2 py-1 border rounded-md"
                                         />
                                     </div>
                                 )) : null}
-
-
-
-
 
                             </div>
                         </div>
@@ -799,9 +995,10 @@ console.log(imagesToDeleteArray)
                                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                             <input
                                                 type="file"
+                                                multiple
                                                 name="section1image"
                                                 // value={section.section1image}
-                                                onChange={(e) => handleSectionChange(e, "sections1", index)}
+                                                onChange={(e) => handleImageUploadSection1(e, index)}
                                                 className="hidden"
                                             />
                                             <span className="text-gray-700">Choose a file</span>
@@ -810,26 +1007,30 @@ console.log(imagesToDeleteArray)
 
                                     <div className="w-full mb-4">
                                         {/* Image Preview */}
-                                        {section.section1image ? (
-                                            section.section1image instanceof File ? (
-                                                // If section.section1image is a File, show the preview
-                                                <img
-                                                    src={URL.createObjectURL(section.section1image)}
-                                                    alt={section.alt || `Gallery image ${index + 1}`}
-                                                    className="w-full h-50 object-cover rounded-lg"
-                                                />
-                                            ) : (
-                                                // If section.section1image is not a File, show the image from the URL
-                                                <img
-                                                    src={`${data.url}/Images/project/${section.section1image}`}
-                                                    alt={section.alt || `Gallery image ${index + 1}`}
-                                                    className="w-full h-50 object-cover rounded-lg"
-                                                />
-                                            )
-                                        ) : (
-                                            // Fallback if section.section1image is not available
-                                            <p>No image available</p>
-                                        )}
+                                        {section.gallery && section.gallery.length > 0 ? (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                {section.gallery.map((img, imgIndex) =>
+                                                    img.section1image ? (
+                                                        <div key={imgIndex} className="relative group">
+                                                            <img
+                                                                src={`${data.url}/Images/project/${img.section1image}`}
+                                                                alt={img.section1alt || `Gallery image ${imgIndex + 1}`}
+                                                                className="w-full h-50 object-cover rounded-lg"
+                                                            />
+
+                                                            {/* Remove Button (visible on hover) */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteImageSection1(index, imgIndex)}
+                                                                className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                    ) : null // ✅ Skips rendering if no image exists
+                                                )}
+                                            </div>
+                                        ) : null}
                                     </div>
 
                                     {/* Image Alt */}
@@ -1004,7 +1205,7 @@ console.log(imagesToDeleteArray)
                                             <input
                                                 type="file"
                                                 name="section2image"
-                                                onChange={(e) => handleSectionChange(e, "sections2", index)}
+                                                onChange={(e) => handleImageUploadSection2(e, index)}
                                                 className="hidden"
                                             />
                                             <span className="text-gray-700">choose a file</span>
@@ -1014,24 +1215,23 @@ console.log(imagesToDeleteArray)
                                     <div className="w-full  mb-4">
                                         {/* Image Preview */}
                                         {section.section2image ? (
-                                            section.section2image instanceof File ? (
-                                                <img
-                                                    src={URL.createObjectURL(section.section2image)}
-                                                    alt={section.alt || `Gallery image ${index + 1}`}
-                                                    className="w-full h-50 object-cover rounded-lg"
-                                                />
-                                            ) : (
-                                                // If section.section1image is not a File, show the image from the URL
+                                            <div className="relative flex group">
                                                 <img
                                                     src={`${data.url}/Images/project/${section.section2image}`}
                                                     alt={section.alt || `Gallery image ${index + 1}`}
                                                     className="w-full h-50 object-cover rounded-lg"
                                                 />
-                                            )
-                                        ) : (
-                                            <p>no image available</p>
-                                        )}
 
+                                                {/* Remove Button (visible on hover) */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteImageSection2(index)}
+                                                    className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ) : null}
                                     </div>
 
                                     {/* Section Alt Text */}

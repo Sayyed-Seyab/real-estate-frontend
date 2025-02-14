@@ -3,6 +3,7 @@ import { Button, Typography } from "@material-tailwind/react";
 import { StoreContext } from "@/context/Context";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const UpdateProductPlan = () => {
     const navigate = useNavigate();
@@ -36,6 +37,7 @@ const UpdateProductPlan = () => {
                         gallery: deepCopyEditProductPlan.gallery || [{ galleryimage: "", alt: "" }],
                         video: deepCopyEditProductPlan.video || "",
                         plans: deepCopyEditProductPlan.plans ||  [{ name: "", desc:""}],
+                        file: deepCopyEditProductPlan.file || "",
                         status: deepCopyEditProductPlan.status || null,
                         metatitle: deepCopyEditProductPlan.metatitle || "",
                         metadesc: deepCopyEditProductPlan.metadesc || "",
@@ -219,12 +221,98 @@ const imagesToDeleteArray = [
         console.log(formData)
     },[formData])
 
+
+     // Handle File Upload
+     const handleFileUpload = async (e) => {
+        const file = e.target.files[0]; // Get the selected file
+        if (!file) return;
+
+        const fileData = new FormData();
+        fileData.append("file", file);
+
+        try {
+            const response = await axios.post(`${data.url}/api/admin/upload/productplan`, fileData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (response.data.success) {
+                const fileUrl = response.data.file; // Get uploaded file URL
+
+                setFormData((prevData) => ({
+                    ...prevData,
+                    file: fileUrl, // Store file URL in formData.file
+                }));
+
+                toast.success("File uploaded successfully!");
+                console.log("Uploaded File URL:", fileUrl);
+            } else {
+                toast.error("File upload failed.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error uploading file.");
+        }
+    };
+
+
+    const handleDeleteFile = async (e) => {
+        e.preventDefault();
+        if (!formData.file) {
+            alert("No file to delete");
+           
+        }
+    
+        try {
+            const response = await axios.delete(`${data.url}/api/admin/upload/productplan/${formData.file}`);
+    
+            if (response.data.success) {
+                setFormData((prev) => ({ ...prev, file: "" })); // Remove file from formData
+                toast.success("File deleted successfully!");
+            } else {
+                toast.success("Error deleting file");
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            toast.success("Error deleting file");
+        }
+    };
+
     return (
         <div>
             <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center"> {formData.type == 'Product plan' ? 'Update Product Plan' : 'Update Master Plan'} </h2>
                 <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
 
+                <div>
+            {/* File Upload Input */}
+            <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+            <input
+                type="file"
+                accept=".pdf,.txt,.doc,.docx" // Restrict file types
+                onChange={handleFileUpload}
+                className="hidden"
+            />
+             <span className="text-gray-700">Upload File (PDF, TXT, etc.)</span>
+             </label>
+            {/* Show uploaded file URL */}
+            {formData.file && (
+                <div className="mt-4">
+                    <p className="text-green-600 font-medium">File Uploaded:</p>
+                    <a href={`${data.url}/Files/${formData.file}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                        {formData.file}
+                    </a>
+                  {/* Delete File Button */}
+            <button
+                onClick={handleDeleteFile}
+                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+            >
+                Delete
+            </button>
+                </div>
+            )}
+        </div>
+                     
+                     
                      {/* Gallery Images Field */}
                      <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">

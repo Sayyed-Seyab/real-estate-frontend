@@ -3,10 +3,11 @@ import { Button, Typography } from "@material-tailwind/react";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const AddProjectForm = () => {
     const navigate = useNavigate()
-    const { data, ProjectCategories,  SetTostMsg} = useContext(StoreContext)
+    const { data, ProjectCategories, SetTostMsg } = useContext(StoreContext)
     const [step, setStep] = useState(1); // Track the current part of the form
     const [previewgallery, setpreviewgallery] = useState({
         gallery: ""
@@ -19,7 +20,7 @@ const AddProjectForm = () => {
         address: "",
         accommodation: "",
         type: "",
-        gallery: [{ galleryimage: "", alt: "" }],
+        gallery: [],
         video: "",
         status: null,
         metatitle: "",
@@ -28,11 +29,11 @@ const AddProjectForm = () => {
         amenitytitle: "",
         amenitydesc: "",
         productplantitle: "",
-        sections1: [{ sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }],
-        section2title: "",
-        section2subtitle: "",
-        section2desc: "",
-        sections2: [{sectiontype:"", name: "", desc: "", section2image: "", section2alt: "" }],
+        sections1: [{ sectiontype: "", title: "", subtitle: "", desc: "", gallery: [], section1alt: "" }],
+        section2title: " ",
+        section2subtitle: " ",
+        section2desc: " ",
+        sections2: [{ sectiontype: "", name: "", desc: "", section2image: "", section2alt: "" }],
     });
     const [previewImage, setPreviewImage] = useState(null);
     const [projectParent] = useState([{ _id: "1", name: "Parent 1" }, { _id: "2", name: "Parent 2" }]);
@@ -46,6 +47,203 @@ const AddProjectForm = () => {
             [name]: value,
         });
     };
+
+    const handleImageUploadSection1 = async (e, sectionIndex) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        const uploadedImages = [];
+
+        for (const file of files) {
+            const imageData = new FormData();
+            imageData.append("file", file);
+
+            try {
+                const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+
+                if (response.data.success) {
+                    uploadedImages.push({ section1image: response.data.file, section1alt: "" });
+                } else {
+                    toast.error(`Failed to upload ${file.name}`);
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                toast.error(`Error uploading ${file.name}`);
+            }
+        }
+        if (uploadedImages.length > 0) {
+            setFormData((prevData) => ({
+                ...prevData,
+                sections1: prevData.sections1.map((section, idx) =>
+                    idx === sectionIndex
+                        ? { ...section, gallery: [...section.gallery, ...uploadedImages] }
+                        : section
+                ),
+            }));
+
+            toast.success("Images uploaded successfully!");
+        }
+    };
+
+
+    // Handle image deletion for Section 1
+    const handleDeleteImageSection1 = async (sectionIndex, imageIndex) => {
+        try {
+            const imageUrl = formData.sections1[sectionIndex]?.gallery[imageIndex]?.section1image;
+            if (!imageUrl) {
+                toast.error("No image found to delete.");
+                return;
+            }
+
+            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`);
+
+            setFormData((prevData) => ({
+                ...prevData,
+                sections1: prevData.sections1.map((section, secIdx) =>
+                    secIdx === sectionIndex
+                        ? {
+                            ...section,
+                            gallery: section.gallery.filter((_, imgIdx) => imgIdx !== imageIndex),
+                        }
+                        : section
+                ),
+            }));
+            toast.success("Image deleted successfully!");
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error deleting image.");
+        }
+    };
+
+
+
+    const handleImageUpload = async (e) => {
+
+        const files = e.target.files;
+        if (!files.length) return;
+
+        const uploadPromises = Array.from(files).map(async (file) => {
+            const imageData = new FormData();
+            imageData.append("file", file);
+
+            try {
+                const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+
+                console.log(response)
+                if (response.data.success) {
+
+                    return { galleryimage: response.data.file, alt: "" }; // Store image URL in `galleryimage`
+
+                } else {
+                    toast.error("Image upload failed.");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                toast.error("Error uploading image.");
+                return null;
+            }
+        });
+
+        const uploadedImages = (await Promise.all(uploadPromises)).filter(Boolean); // Remove any failed uploads
+
+        setFormData((prevData) => ({
+            ...prevData,
+            gallery: [...prevData.gallery, ...uploadedImages], // Append new images
+        }));
+        setfile(true)
+        console.log(uploadedImages);
+    };
+
+    const handleImageUploadSection2 = async (e, index) => {
+        const file = e.target.files[0]; // Get first file
+        if (!file) return;
+
+        const imageData = new FormData();
+        imageData.append("file", file);
+
+        try {
+            const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (response.data.success) {
+                const imageUrl = response.data.file; // Get uploaded image URL
+
+                // Update the specific index in sections1 array
+                setFormData((prevData) => ({
+                    ...prevData,
+                    sections2: prevData.sections2.map((section, i) =>
+                        i === index ? { ...section, section2image: imageUrl } : section
+                    ),
+                }));
+
+                console.log("Uploaded Image URL:", imageUrl);
+            } else {
+                toast.error("Image upload failed.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error uploading image.");
+        }
+    };
+
+    const handleDeleteImageSection2 = async (index) => {
+        try {
+            // Get the image URL to delete
+            const imageUrl = formData.sections2[index].section2image;
+            if (!imageUrl) return;
+
+            // Send request to delete image from the server
+            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`)
+
+            // Update formData to remove the image
+            setFormData((prevData) => ({
+                ...prevData,
+                sections2: prevData.sections2.map((section, i) =>
+                    i === index ? { ...section, section2image: "" } : section
+                ),
+            }));
+
+            toast.success("Image deleted successfully!");
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error deleting image.");
+        }
+    };
+
+
+
+
+    const HandleRemoveImage = async (imageUrl) => {
+
+        try {
+            const response = await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl.galleryimage}`, {
+            });
+            if (response.data.success) {
+                setFormData((prev) => ({
+                    ...prev,
+                    gallery: [
+                        ...prev.gallery.filter((item) => item.galleryimage !== imageUrl.galleryimage), // Remove empty object
+
+                    ],
+                }));
+                toast.success("Image deleted.");
+            } else {
+                toast.error("Failed to delete image.");
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Error deleting image.");
+        }
+    };
+
+
+
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         const newImages = files.map((file) => ({
@@ -91,7 +289,7 @@ const AddProjectForm = () => {
         }));
     };
 
-    const handleRemoveImage = (index) => {
+    const H = (index) => {
         // Filter out the specific image by index
         const updatedGallery = previewgallery.gallery.filter((_, idx) => idx !== index);
         const updatedformGallery = formData.gallery.filter((_, idx) => idx !== index);
@@ -133,8 +331,8 @@ const AddProjectForm = () => {
     // Add a new section (either sections1 or sections2)
     const addSection = (sectionName) => {
         const newSection = sectionName === "sections1"
-            ? { sectiontype: "", title: "", subtitle: "", desc: "", section1image: "", section1alt: "" }
-            : { sectiontype: "",    name: "", desc: "", section2image: "", section2alt: "" };
+            ? { sectiontype: "", title: "", subtitle: "", desc: "", gallery: [{ section1image: "", section1alt: "" }], section1alt: "" }
+            : { sectiontype: "", name: "", desc: "", section2image: "", section2alt: "" };
 
         setFormData({
             ...formData,
@@ -164,8 +362,8 @@ const AddProjectForm = () => {
     }, [formData])
 
     // Handle category selection change
-const handleCategoryChange = (e) => {
-    const selectedCategoryId = e.target.value;
+    const handleCategoryChange = (e) => {
+        const selectedCategoryId = e.target.value;
 
         if (selectedCategoryId) {
             const alreadyexistCategory = formData.categories.some((cat) => cat.id === selectedCategoryId)
@@ -180,16 +378,16 @@ const handleCategoryChange = (e) => {
                 })
             }
         }
-};
+    };
 
-// Remove selected category from the list
-const removeCategory = (index) => {
-    const updatedCategories = formData.categories.filter((_, i) => i !== index);
-    setFormData({
-        ...formData,
-        categories: updatedCategories,
-    });
-};
+    // Remove selected category from the list
+    const removeCategory = (index) => {
+        const updatedCategories = formData.categories.filter((_, i) => i !== index);
+        setFormData({
+            ...formData,
+            categories: updatedCategories,
+        });
+    };
 
 
 
@@ -202,88 +400,88 @@ const removeCategory = (index) => {
 
         try {
             // Prepare promises for uploading gallery, section1images, and section2images
-            const galleryImagePromises = formData.gallery.map(async (image) => {
-                if (image.galleryimage instanceof File) {
-                    const formDataImage = new FormData();
-                    formDataImage.append('file', image.galleryimage);
+            // const galleryImagePromises = formData.gallery.map(async (image) => {
+            //     if (image.galleryimage instanceof File) {
+            //         const formDataImage = new FormData();
+            //         formDataImage.append('file', image.galleryimage);
 
-                    const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
-                    return response.data.file; // Assuming the response contains the uploaded image URL
-                }
-                return image.galleryimage; // If no file, return the current value (could be URL)
-            });
+            //         const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
+            //             headers: {
+            //                 'Content-Type': 'multipart/form-data',
+            //             },
+            //         });
+            //         return response.data.file; // Assuming the response contains the uploaded image URL
+            //     }
+            //     return image.galleryimage; // If no file, return the current value (could be URL)
+            // });
 
-            const section1ImagePromises = formData.sections1.map(async (section) => {
-                if (section.section1image instanceof File) {
-                    const formDataImage = new FormData();
-                    formDataImage.append('file', section.section1image);
+            // const section1ImagePromises = formData.sections1.map(async (section) => {
+            //     if (section.section1image instanceof File) {
+            //         const formDataImage = new FormData();
+            //         formDataImage.append('file', section.section1image);
 
-                    const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
-                    return response.data.file; // Assuming the response contains the uploaded image URL
-                }
-                return section.section1image; // If no file, return the current value (could be URL)
-            });
+            //         const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
+            //             headers: {
+            //                 'Content-Type': 'multipart/form-data',
+            //             },
+            //         });
+            //         return response.data.file; // Assuming the response contains the uploaded image URL
+            //     }
+            //     return section.section1image; // If no file, return the current value (could be URL)
+            // });
 
-            const section2ImagePromises = formData.sections2.map(async (section) => {
-                if (section.section2image instanceof File) {
-                    const formDataImage = new FormData();
-                    formDataImage.append('file', section.section2image);
+            // const section2ImagePromises = formData.sections2.map(async (section) => {
+            //     if (section.section2image instanceof File) {
+            //         const formDataImage = new FormData();
+            //         formDataImage.append('file', section.section2image);
 
-                    const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
-                    return response.data.file; // Assuming the response contains the uploaded image URL
-                }
-                return section.section2image; // If no file, return the current value (could be URL)
-            });
+            //         const response = await axios.post(`${data.url}/api/admin/upload/project`, formDataImage, {
+            //             headers: {
+            //                 'Content-Type': 'multipart/form-data',
+            //             },
+            //         });
+            //         return response.data.file; // Assuming the response contains the uploaded image URL
+            //     }
+            //     return section.section2image; // If no file, return the current value (could be URL)
+            // });
 
             // Wait for all image uploads to complete
-            const galleryImageUrls = await Promise.all(galleryImagePromises);
-            const section1ImageUrls = await Promise.all(section1ImagePromises);
-            const section2ImageUrls = await Promise.all(section2ImagePromises);
+            // const galleryImageUrls = await Promise.all(galleryImagePromises);
+            // const section1ImageUrls = await Promise.all(section1ImagePromises);
+            // const section2ImageUrls = await Promise.all(section2ImagePromises);
 
             // Update sections and gallery with the uploaded image URLs
-            const updatedGallery = formData.gallery.map((image, index) => ({
-                ...image,
-                galleryimage: galleryImageUrls[index] || image.galleryimage,
-            }));
+            // const updatedGallery = formData.gallery.map((image, index) => ({
+            //     ...image,
+            //     galleryimage: galleryImageUrls[index] || image.galleryimage,
+            // }));
 
-            const updatedSections1 = formData.sections1.map((section, index) => ({
-                ...section,
-                section1image: section1ImageUrls[index] || section.section1image,
-            }));
+            // const updatedSections1 = formData.sections1.map((section, index) => ({
+            //     ...section,
+            //     section1image: section1ImageUrls[index] || section.section1image,
+            // }));
 
-            const updatedSections2 = formData.sections2.map((section, index) => ({
-                ...section,
-                section2image: section2ImageUrls[index] || section.section2image,
-            }));
+            // const updatedSections2 = formData.sections2.map((section, index) => ({
+            //     ...section,
+            //     section2image: section2ImageUrls[index] || section.section2image,
+            // }));
 
             // Update formData with the new image URLs
             // Update formData with the new image URLs
-            const updatedFormData = {
-                ...formData,
-                gallery: updatedGallery,
-                sections1: updatedSections1,
-                sections2: updatedSections2
-            };
+            // const updatedFormData = {
+            //     ...formData,
+            //     gallery: updatedGallery,
+            //     sections1: updatedSections1,
+            //     sections2: updatedSections2
+            // };
 
             // Send the updated form data to your API
-            const response = await axios.post(`${data.url}/api/admin/project`, updatedFormData);
+            const response = await axios.post(`${data.url}/api/admin/project`, formData);
             console.log(response)
             if (response.data.success) {
                 console.log('Project added successfully:', response.data);
                 SetTostMsg(response.data.message);
-               navigate('/dashboard/project')
+                navigate('/dashboard/project')
                 // Handle success (e.g., redirect, show success message, etc.)
             } else {
                 console.error('Error adding project:', response.data);
@@ -314,21 +512,21 @@ const removeCategory = (index) => {
                                     accept="image/*"
                                     multiple // Allow multiple file selection
                                     name="image"
-                                    onChange={handleImageChange}
+                                    onChange={handleImageUpload}
                                     className="hidden"
                                 />
                                 <span className="text-gray-700">Choose a file</span>
                             </label>
                             {/* Display Image Previews with Alt Inputs */}
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {eixstfile ? previewgallery.gallery?.map((image, index) => (
+                                {eixstfile ? formData.gallery?.map((image, index) => (
                                     <div
                                         key={index}
                                         className="relative flex flex-col  space-y-2 group"
                                     >
                                         {/* Image */}
                                         <img
-                                            src={image.galleryimage}
+                                            src={`${data.url}/Images/project/${image.galleryimage}`}
                                             alt={image.alt || "Uploaded image"}
                                             className="h-32 w-full object-cover rounded-lg border"
                                         />
@@ -336,7 +534,7 @@ const removeCategory = (index) => {
                                         {/* Remove Button (only visible on hover) */}
                                         <button
                                             type="button"
-                                            onClick={() => handleRemoveImage(index)}
+                                            onClick={() => HandleRemoveImage(image)}
                                             className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             Remove
@@ -356,11 +554,11 @@ const removeCategory = (index) => {
                             </div>
                         </div>
 
-                         {/* Project Type */}
-                            {/* Project Categories */}
-                            {/* Project Categories */}
-                         
-                            <div className="mb-4">
+                        {/* Project Type */}
+                        {/* Project Categories */}
+                        {/* Project Categories */}
+
+                        <div className="mb-4">
                             <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
                                 Project Categories
                             </label>
@@ -382,9 +580,9 @@ const removeCategory = (index) => {
                                 ))}
                             </select>
                         </div>
-                         
-                          {/* Display selected categories */}
-                          {formData.categories.length > 0 ?
+
+                        {/* Display selected categories */}
+                        {formData.categories.length > 0 ?
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Selected Categories
@@ -407,7 +605,7 @@ const removeCategory = (index) => {
                                     ))}
                                 </div>
                             </div>
-                             : null}
+                            : null}
 
                         {/* Parent Project Selection */}
                         {/* <div className="form-group mb-4">
@@ -459,7 +657,7 @@ const removeCategory = (index) => {
                                 </div>
                             </div>
 
-                           
+
 
 
 
@@ -631,8 +829,8 @@ const removeCategory = (index) => {
                                 />
                             </div>
 
-                             {/* Product Plan Title */}
-                             <div className="mb-4">
+                            {/* Product Plan Title */}
+                            <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">Product Plan Title</label>
                                 <input
                                     type="text"
@@ -672,29 +870,29 @@ const removeCategory = (index) => {
                         <h3 className="text-lg font-semibold mt-6 mb-2">Sections 1</h3>
                         {formData.sections1.map((section, index) => (
                             <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
-                                
+
                                 {/* section type */}
                                 <div className="mb-4">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Selection Type:
-                        </label>
-                        <select
-                            name="sectiontype"
-                            value={section.sectiontype}
-                            onChange={(e) => handleSectionChange(e, "sections1", index)}
-                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
-                            required
-                        >
-                            <option value="" >
-                                Select Type
-                            </option>
-                            <option value="Hero">Hero</option>
-                            <option value="About">About</option>
-                            <option value="Location">Location</option>
-                            <option value="Background">Background</option>
-                            <option value="Associations">Associations</option>
-                            </select>
-                            </div>
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                        Selection Type:
+                                    </label>
+                                    <select
+                                        name="sectiontype"
+                                        value={section.sectiontype}
+                                        onChange={(e) => handleSectionChange(e, "sections1", index)}
+                                        className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                                        required
+                                    >
+                                        <option value="" >
+                                            Select Type
+                                        </option>
+                                        <option value="Hero">Hero</option>
+                                        <option value="About">About</option>
+                                        <option value="Location">Location</option>
+                                        <option value="Background">Background</option>
+                                        <option value="Associations">Associations</option>
+                                    </select>
+                                </div>
 
 
                                 <div>
@@ -706,25 +904,46 @@ const removeCategory = (index) => {
                                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                             <input
                                                 type="file"
+                                                multiple
                                                 name="section1image"
                                                 // value={section.section1image}
-                                                onChange={(e) => handleSectionChange(e, "sections1", index)}
+                                                onChange={(e) => handleImageUploadSection1(e, index)}
                                                 className="hidden"
                                             />
                                             <span className="text-gray-700">Choose a file</span>
                                         </label>
                                     </div>
 
-                                    <div className="w-full  mb-4">
+                                    <div className="w-full mb-4">
                                         {/* Image Preview */}
-                                        {section.section1image && section.section1image instanceof File && (
-                                            <img
-                                                src={URL.createObjectURL(section.section1image)}
-                                                alt={section.alt || `Gallery image ${index + 1}`}
-                                                className="w-full h-50 object-cover rounded-lg"
-                                            />
-                                        )}
+                                        {section.gallery && section.gallery.length > 0 ? (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                {section.gallery.map((img, imgIndex) =>
+                                                    img.section1image ? (
+                                                        <div key={imgIndex} className="relative group">
+                                                            <img
+                                                                src={`${data.url}/Images/project/${img.section1image}`}
+                                                                alt={img.section1alt || `Gallery image ${imgIndex + 1}`}
+                                                                className="w-full h-50 object-cover rounded-lg"
+                                                            />
+
+                                                            {/* Remove Button (visible on hover) */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteImageSection1(index, imgIndex)}
+                                                                className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                    ) : null // ✅ Skips rendering if no image exists
+                                                )}
+                                            </div>
+                                        ) : null}
                                     </div>
+
+
+
 
                                     {/* Image Alt */}
                                     <div className="mb-2">
@@ -741,8 +960,8 @@ const removeCategory = (index) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                
-                                   
+
+
 
                                     {/* Title */}
                                     <div className="mb-2">
@@ -879,25 +1098,25 @@ const removeCategory = (index) => {
                         {formData.sections2.map((section, index) => (
                             <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
 
-                                  {/* section type */}
-                                  <div className="mb-4">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Selection Type:
-                        </label>
-                        <select
-                            name="sectiontype"
-                            value={section.sectiontype}
-                            onChange={(e) => handleSectionChange(e, "sections2", index)}
-                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
-                            required
-                        >
-                            <option value="" >
-                                Select Type
-                            </option>
-                            <option value="Amenties">Amenties</option>
-                            <option value="Nearby">Nearby</option>
-                            </select>
-                            </div>
+                                {/* section type */}
+                                <div className="mb-4">
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                        Selection Type:
+                                    </label>
+                                    <select
+                                        name="sectiontype"
+                                        value={section.sectiontype}
+                                        onChange={(e) => handleSectionChange(e, "sections2", index)}
+                                        className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                                        required
+                                    >
+                                        <option value="" >
+                                            Select Type
+                                        </option>
+                                        <option value="Amenties">Amenties</option>
+                                        <option value="Nearby">Nearby</option>
+                                    </select>
+                                </div>
 
                                 <div>
                                     {/* Section Image */}
@@ -909,7 +1128,7 @@ const removeCategory = (index) => {
                                             <input
                                                 type="file"
                                                 name="section2image"
-                                                onChange={(e) => handleSectionChange(e, "sections2", index)}
+                                                onChange={(e) => handleImageUploadSection2(e, index)}
                                                 className="hidden"
                                             />
                                             <span className="text-gray-700">choose a file</span>
@@ -918,13 +1137,24 @@ const removeCategory = (index) => {
 
                                     <div className="w-full  mb-4">
                                         {/* Image Preview */}
-                                        {section.section2image && section.section2image instanceof File && (
-                                            <img
-                                                src={URL.createObjectURL(section.section2image)}
-                                                alt={section.alt || `Gallery image ${index + 1}`}
-                                                className="w-full h-50 object-cover rounded-lg"
-                                            />
-                                        )}
+                                        {section.section2image ? (
+                                            <div className="relative flex group">
+                                                <img
+                                                    src={`${data.url}/Images/project/${section.section2image}`}
+                                                    alt={section.alt || `Gallery image ${index + 1}`}
+                                                    className="w-full h-50 object-cover rounded-lg"
+                                                />
+
+                                                {/* Remove Button (visible on hover) */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteImageSection2(index)}
+                                                    className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ) : null}
                                     </div>
 
                                     {/* Section Alt Text */}

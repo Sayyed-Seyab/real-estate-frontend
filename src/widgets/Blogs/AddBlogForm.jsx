@@ -24,6 +24,59 @@ export default function AddBlog() {
     });
     const [PreviewImage, setPreviewImage] = useState()
 
+    const [uploadedImages, setUploadedImages] = useState([]);
+
+  const handleImageUpload = async (e) => {
+    const files = e.target.files;
+    if (!files.length) return;
+
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const response = await axios.post(`${data.url}/api/admin/upload/blog`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (response.data.success) {
+          return response.data.file;
+        } else {
+          toast.error("Image upload failed.");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error("Error uploading image.");
+      }
+    });
+
+    const uploaded = await Promise.all(uploadPromises);
+    setUploadedImages([...uploadedImages, ...uploaded.filter(Boolean)]);
+    console.log(uploadedImages)
+  };
+
+  console.log(uploadedImages)
+
+  const handleRemoveImage = async (imageUrl) => {
+    try {
+      const response = await axios.delete(`${data.url}/api/admin/upload/blog/${imageUrl}`, {
+      });
+      if (response.data.success) {
+        setUploadedImages(uploadedImages.filter((img) => img !== imageUrl));
+        toast.success("Image deleted.");
+      } else {
+        toast.error("Failed to delete image.");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Error deleting image.");
+    }
+  };
+
+  const handleCopyUrl = (url) => {
+    navigator.clipboard.writeText(`${data.url}/Images/blog/${url}`);
+    toast.success("Image URL copied!");
+  };
+
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData({
@@ -172,6 +225,40 @@ export default function AddBlog() {
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             ></textarea>
                         </div>
+
+
+                         {/* Upload Images */}
+      <div className="mb-4">
+        <Typography variant="small" className="font-medium">Get image Url</Typography>
+        <label className="block p-3 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+          <input
+           type="file"
+           accept="image/*"
+           multiple
+           onChange={handleImageUpload}
+           className="hidden"
+            />
+            
+          <span className="text-gray-700">Choose files</span>
+        </label>
+      </div>
+
+      {/* Display Uploaded Images */}
+      {uploadedImages.length > 0 && (
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {uploadedImages.map((image, index) => (
+            <div key={index} className="relative border p-2 rounded-md">
+              <img src={`${data.url}/Images/blog/${image}`} alt="Uploaded" className="w-full h-32 object-cover rounded" />
+              <div className="mt-2 flex justify-between items-center">
+                <input type="text" value={image} readOnly className="w-full p-1 text-xs border rounded" />
+                <button onClick={() => handleCopyUrl(image)} className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded">Copy</button>
+                <button onClick={() => handleRemoveImage(image)} className="ml-2 bg-red-500 text-white px-2 py-1 text-xs rounded">Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    
 
                     {/* Description Field */}
                     <div className="mb-4">

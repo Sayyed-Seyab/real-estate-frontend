@@ -81,8 +81,11 @@ export default function Project() {
 
         // // Step 2: Delete amenity images
         const section1DeletePromise = project.sections1.map(async (section1) => {
-            const res = await axios.delete(`${data.url}/api/admin/upload/project/${section1.section1image}`);
+            section1.gallery.map(async (img)=>{
+                const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.section1image}`);
             return res.data; // Return success status
+            })
+            
         });
 
         const section2DeletePromise = project.sections2.map(async (section2) => {

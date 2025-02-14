@@ -6,4 +6,7 @@ export default defineConfig({
   resolve: {
     alias: [{ find: "@", replacement: "/src" }],
   },
+  optimizeDeps: {
+    include: ["jodit-react"],
+  },
 });
