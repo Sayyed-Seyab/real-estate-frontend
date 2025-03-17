@@ -1,4 +1,4 @@
-import { StoreContext } from '@/context/context';
+import { StoreContext } from '@/context/Context';
 import Loader from '@/widgets/loader/Loader';
 import React, { useContext, useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom';

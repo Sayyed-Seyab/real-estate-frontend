@@ -1,4 +1,4 @@
-import { StoreContext } from "@/context/context";
+import { StoreContext } from "@/context/Context";
 import {
   Card,
   Input,
