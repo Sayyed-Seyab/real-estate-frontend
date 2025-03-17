@@ -5,13 +5,14 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import BlogEditor from "../Quill/Quill";
+import Loader from "../loader/Loader";
 
 
 export default function AddBlog() {
-    const { data, SetTostMsg, tostMsg, Projectparent } = useContext(StoreContext)
+    const { data, Token, SetTostMsg, tostMsg, Projectparent,  Isloading, setIsloading } = useContext(StoreContext)
     const [Btnloading, setBtnloading] = useState(false)
     const navigate = useNavigate()
-    console.log(data)
+    console.log(Token)
     const [formData, setFormData] = useState({
         image: "",
         name: "",
@@ -35,7 +36,10 @@ export default function AddBlog() {
       formData.append("file", file);
       try {
         const response = await axios.post(`${data.url}/api/admin/upload/blog`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data",
+             Authorization: `Bearer ${Token}`,
+           },
+             
         });
         if (response.data.success) {
           return response.data.file;
@@ -58,7 +62,12 @@ export default function AddBlog() {
   const handleRemoveImage = async (imageUrl) => {
     try {
       const response = await axios.delete(`${data.url}/api/admin/upload/blog/${imageUrl}`, {
-      });
+                headers: {
+              
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
       if (response.data.success) {
         setUploadedImages(uploadedImages.filter((img) => img !== imageUrl));
         toast.success("Image deleted.");
@@ -106,7 +115,7 @@ export default function AddBlog() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+         setIsloading(true)
         
     
         // Prepare FormData for file upload
@@ -118,7 +127,10 @@ export default function AddBlog() {
             const uploadResponse = await axios.post(
                 `${data.url}/api/admin/upload/blog`,
                 uploadData,
-                { headers: { "Content-Type": "multipart/form-data" } }
+                { headers: { "Content-Type": "multipart/form-data",
+                   Authorization: `Bearer ${Token}`
+                 },
+                  }
             );
     
             console.log(uploadResponse);
@@ -140,24 +152,34 @@ export default function AddBlog() {
                         metatitle: formData.metatitle,
                         metdesc: formData.metadesc,
                         addedby: formData.addedby,
-                    },
-                    { headers: { "Content-Type": "application/json" } }
+                    }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            }
                 );
     
                 console.log(BlogResponse);
     
                 if (BlogResponse.data.success) {
                     SetTostMsg(BlogResponse.data.message);
+                     setIsloading(false)
                     navigate('/dashboard/blogs')
+
                     
                 } else {
                     toast.error(BlogResponse.data.message);
+                     setIsloading(false)
                 }
             } else {
                 toast.error(uploadResponse.data.message);
+                 setIsloading(false)
             }
         } catch (error) {
             console.error("Error submitting form:", error);
+             setIsloading(false)
         }
     };
     
@@ -167,12 +189,15 @@ export default function AddBlog() {
     }, [formData])
     return (
         <div>
-            <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+          { Isloading? (
+            <Loader/>
+          ):(
+             <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center">Add Blog</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">
-                            Blog Image
+                            Blog Image*
                         </Typography>
                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                             <input
@@ -198,7 +223,7 @@ export default function AddBlog() {
                     <div className="mb-4">
 
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                        Blog  Name
+                        Blog  Name*
                         </label>
                         <input
                             type="text"
@@ -214,7 +239,7 @@ export default function AddBlog() {
                      {/* Description Field */}
                      <div className="mb-4">
                             <label htmlFor="metadesc" className="block text-sm font-medium text-gray-700">
-                                Description
+                                Description*
                             </label>
                             <textarea
                                 id="description"
@@ -251,7 +276,13 @@ export default function AddBlog() {
               <img src={`${data.url}/Images/blog/${image}`} alt="Uploaded" className="w-full h-32 object-cover rounded" />
               <div className="mt-2 flex justify-between items-center">
                 <input type="text" value={image} readOnly className="w-full p-1 text-xs border rounded" />
-                <button onClick={() => handleCopyUrl(image)} className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded">Copy</button>
+               <button
+  type="button" // Add this to prevent form submission
+  onClick={() => handleCopyUrl(image)}
+  className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded"
+>
+  Copy
+</button>
                 <button onClick={() => handleRemoveImage(image)} className="ml-2 bg-red-500 text-white px-2 py-1 text-xs rounded">Remove</button>
               </div>
             </div>
@@ -302,7 +333,7 @@ export default function AddBlog() {
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Blog Status</label>
+                        <label className="block text-sm font-medium text-gray-700">Blog Status*</label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
@@ -352,6 +383,8 @@ export default function AddBlog() {
                     </div>
                 </form>
             </div>
+          )}
+           
 
         </div>
     )

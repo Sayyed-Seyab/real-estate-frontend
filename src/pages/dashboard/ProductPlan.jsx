@@ -9,7 +9,7 @@ import axios from 'axios';
 import { projectsData } from '@/data';
 
 export default function ProductPlan() {
-  const {data, setEditProductPlan, GetProjectProduct,  GetProductPlan, setloading, ProductPlan,  loading,  tostMsg, SetTostMsg } = useContext(StoreContext);
+  const {data, Token, setEditProductPlan, GetProjectProduct,  GetProductPlan, setloading, ProductPlan,  loading,  tostMsg, SetTostMsg } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
@@ -72,7 +72,13 @@ export default function ProductPlan() {
         // Step 1: Delete gallery images
         const galleryDeletePromises = productplan.gallery.map(async (img) => {
             console.log(img.galleryimage)
-            const res = await axios.delete(`${data.url}/api/admin/upload/productplan/${img.galleryimage}`);
+            const res = await axios.delete(`${data.url}/api/admin/upload/productplan/${img.galleryimage}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             return res.data; // Return success status
         });
 
@@ -87,7 +93,13 @@ export default function ProductPlan() {
         }
 
         // Step 3: Delete the product only if all images are successfully deleted
-        const response = await axios.delete(`${data.url}/api/admin/productplan/${productplan._id}`);
+        const response = await axios.delete(`${data.url}/api/admin/productplan/${productplan._id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
         if (response.data.success) {
             GetProductPlan(); // Refresh the data
             toast.success("Product deleted successfully");
@@ -174,8 +186,8 @@ export default function ProductPlan() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={productplan.gallery ? `${data.url}/Images/productplan/${productplan.gallery[0].galleryimage}` : "/path/to/placeholder.jpg"}
-                                            alt={productplan.gallery[0].alt}
+                                            src={productplan.gallery ? `${data.url}/Images/productplan/${productplan.gallery[0].galleryimage}` : "No image"}
+                                            alt={productplan.gallery[0].alt || 'No image'}
                                             size="lg"
                                             variant="rounded"
                                             className="w-20"

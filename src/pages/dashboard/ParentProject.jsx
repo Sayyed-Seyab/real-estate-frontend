@@ -8,13 +8,10 @@ import { MdDelete } from "react-icons/md";
 import axios from 'axios';
 
 export default function ParentProject() {
-  const {data, setloading,   Projectparent, GetProjectParent, loading,  tostMsg, SetTostMsg } = useContext(StoreContext);
+  const {data, setloading, Token,  Projectparent, GetProjectParent, loading,  tostMsg, SetTostMsg, setEditParent, Editparent } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
-  const [isUpdateCityModalOpen, setIsUpdateCityModalOpen] = useState(false);
-  const [isDltCityModalOpen, setIsDltCityModalOpen] = useState(false);
-  const [CityId, SetCityId] = useState('')
+
 
 
   const rowsPerPage = 20; // Number of rows per page
@@ -58,19 +55,26 @@ export default function ParentProject() {
 
       navigate("/dashboard/add-project-parent");
   };
-  const handleUpdateCity = (city) => {
-      // setIsUpdateCityModalOpen(true)
+  const handleUpdateParent = (parentproject) => {
+     setEditParent(parentproject)
+    console.log(parentproject);
       // const findcity = cityDataAllLang.filter((item) => item._id === city._id)
       // SetEditCity(findcity)
       // setloading(false)
-      // navigate("/dashboard/update-city")
+      navigate("/dashboard/update-Project-Parent")
   }
 
   
   const handleDelete = async (parentproject) => {
       try {
 
-          const response = await axios.delete(`${data.url}/api/admin/projectparent/${parentproject._id}`)
+          const response = await axios.delete(`${data.url}/api/admin/projectparent/${parentproject._id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            })
           if (response.data.success) {
             GetProjectParent();
               toast.success(response.data.message)
@@ -135,7 +139,7 @@ export default function ParentProject() {
                             <table className="w-full min-h-[0px] table-auto">
                 <thead>
                     <tr>
-                        {[ "Name", "Description","Status", "Action"].map((header) => (
+                        {["Image", "Name", "Description","Status", "Action"].map((header) => (
                             <th
                                 key={header}
                                 className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -155,6 +159,15 @@ export default function ParentProject() {
                        
                         <tr key={index}>
                             {/* Image */}
+                             <td className="px-5 py-2 border-b border-blue-gray-50">
+                             <Avatar
+                             src={parentproject.img ? `${data.url}/Images/parent/${parentproject.img}` : "No image"}
+                             alt={parentproject.alt || 'No image'}
+                             size="lg"
+                             variant="rounded"
+                             className="w-20"
+                                         />
+                                    </td>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                             <Typography variant="small" color="blue-gray" className="font-semibold">
                                     {parentproject.name}
@@ -182,11 +195,11 @@ export default function ParentProject() {
                             {/* Action Icons */}
                             <td className="px-5 border-b border-blue-gray-50">
                                 <div className="flex justify-center items-center gap-2">
-                                    {/* <AiFillEdit
+                                    <AiFillEdit
                                         className="hover:text-blue-gray-500"
                                         style={{ fontSize: "20px", cursor: "pointer" }}
-                                        onClick={() => handleUpdateCity(parentproject)}
-                                    /> */}
+                                        onClick={() => handleUpdateParent(parentproject)}
+                                    />
                                     <MdDelete
                                         className="hover:text-blue-gray-500"
                                         style={{ fontSize: "20px", cursor: "pointer" }}

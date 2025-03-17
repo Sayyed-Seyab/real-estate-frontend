@@ -4,15 +4,16 @@ import { StoreContext } from "@/context/Context";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../loader/Loader";
 
 const AddProductPlan = () => {
     const navigate = useNavigate();
-    const { Project, data, SetTostMsg, ProjectProduct, GetProjectProduct } = useContext(StoreContext);
+    const { Project, Token, data, GetDetailProjectData, SetTostMsg, ProjectProduct, GetProjectProduct, Isloading, setIsloading } = useContext(StoreContext);
 
     // State for form data
     const [formData, setFormData] = useState({
         type: "",
-        productid: "",
+        projectid: "",
         name: "",
         desc: "",
         gallery: [{ galleryimage: "", alt: "" }],
@@ -83,7 +84,7 @@ const AddProductPlan = () => {
     const addArea = () => {
         setFormData({
             ...formData,
-            plans: [...formData.area, { name: "", desc: "" }],
+            plans: [...formData.plans, { name: "", desc: "" }],
         });
     };
 
@@ -107,6 +108,7 @@ const AddProductPlan = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+     setIsloading(true)
 
         try {
             // Prepare promises for uploading gallery images
@@ -120,6 +122,7 @@ const AddProductPlan = () => {
                         {
                             headers: {
                                 "Content-Type": "multipart/form-data",
+                                 Authorization: `Bearer ${Token}`,
                             },
                         });
                     return response.data.file; // Assuming the response contains the uploaded image URL
@@ -148,27 +151,38 @@ const AddProductPlan = () => {
             // Send the updated form data to your API
             const response = await axios.post(
                 `${data.url}/api/admin/productplan`,
-                updatedFormData
+                updatedFormData , {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            }
             );
             console.log(response);
             if (response.data.success) {
                 console.log("Product added successfully:", response.data);
                 SetTostMsg(response.data.message);
                 navigate("/dashboard/productplans");
+                setIsloading(false)
             } else {
                 toast.error(response.data.message)
                 console.error("Error adding product:", response.data);
+                 setIsloading(false)
             }
         } catch (error) {
             console.error("Error in form submission:", error);
+            toast.error('error occured')
+             setIsloading(false)
         }
     };
 
 
-    
+
 
     useEffect(() => {
         GetProjectProduct();
+        GetDetailProjectData()
         console.log(ProjectProduct)
         console.log(formData)
     }, [formData])
@@ -183,7 +197,11 @@ const AddProductPlan = () => {
 
         try {
             const response = await axios.post(`${data.url}/api/admin/upload/productplan`, fileData, {
-                headers: { "Content-Type": "multipart/form-data" },
+                headers: {
+                  
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
             });
 
             if (response.data.success) {
@@ -211,10 +229,16 @@ const AddProductPlan = () => {
             alert("No file to delete");
             return;
         }
-    
+
         try {
-            const response = await axios.delete(`${data.url}/api/admin/upload/productplan/${formData.file}`);
-    
+            const response = await axios.delete(`${data.url}/api/admin/upload/productplan/${formData.file}`, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+
             if (response.data.success) {
                 setFormData((prev) => ({ ...prev, file: "" })); // Remove file from formData
                 alert("File deleted successfully!");
@@ -226,47 +250,53 @@ const AddProductPlan = () => {
             alert("Error deleting file");
         }
     };
-    
+
 
     return (
         <div>
-            <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4 text-center">Add Product Plan or Master Plan</h2>
+            { Isloading ? (
+                <Loader/>
+            ):(
+ <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+                <h2 className="text-xl font-bold mb-4 text-center">Add Plan</h2>
                 <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
 
-                <div>
-            {/* File Upload Input */}
-            <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
-            <input
-                type="file"
-                accept=".pdf,.txt,.doc,.docx" // Restrict file types
-                onChange={handleFileUpload}
-                className="hidden"
-            />
-             <span className="text-gray-700">Upload File (PDF, TXT, etc.)</span>
-             </label>
-            {/* Show uploaded file URL */}
-            {formData.file && (
-                <div className="mt-4">
-                    <p className="text-green-600 font-medium">File Uploaded:</p>
-                    <a href={`${data.url}/Files/${formData.file}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                        {formData.file}
-                    </a>
-                  {/* Delete File Button */}
-            <button
-                onClick={handleDeleteFile}
-                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-            >
-                Delete
-            </button>
-                </div>
-            )}
-        </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                            Upload file (Optional)
+                        </label>
+                        {/* File Upload Input */}
+                        <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+                            <input
+                                type="file"
+                                accept=".pdf,.txt,.doc,.docx" // Restrict file types
+                                onChange={handleFileUpload}
+                                className="hidden"
+                            />
+                            <span className="text-gray-700">Upload File (PDF)</span>
+                        </label>
+                        {/* Show uploaded file URL */}
+                        {formData.file && (
+                            <div className="mt-4">
+                                <p className="text-green-600 font-medium">File Uploaded:</p>
+                                <a href={`${data.url}/Files/${formData.file}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                                    {formData.file}
+                                </a>
+                                {/* Delete File Button */}
+                                <button
+                                    onClick={handleDeleteFile}
+                                    className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Gallery Images Field */}
                     <div className="space-y-2 mb-4 mt-4">
                         <Typography variant="small" className="font-medium">
-                            Gallery Images
+                            Gallery Images*
                         </Typography>
                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                             <input
@@ -280,11 +310,11 @@ const AddProductPlan = () => {
                             <span className="text-gray-700">Choose a file</span>
                         </label>
                         {/* Display Image Previews with Alt Inputs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3  gap-2">
                             {formData.gallery.map((image, index) => (
                                 <div
                                     key={index}
-                                    className=" flex flex-wrap  space-y-2 group"
+                                    className=" flex flex-wrap gap-2space-y-2 group"
                                 >
                                     {/* Image */}
                                     {image.galleryimage instanceof File ? (
@@ -293,7 +323,7 @@ const AddProductPlan = () => {
                                                 <img
                                                     src={URL.createObjectURL(image.galleryimage)}
                                                     alt={image.alt || "Uploaded image"}
-                                                    className="h-32 w-full object-cover rounded-lg border"
+                                                    className="h-32 w-60 object-cover rounded-lg border"
                                                 />
                                                 {/* Remove Button (only visible on hover) */}
                                                 <button
@@ -326,7 +356,7 @@ const AddProductPlan = () => {
 
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Select Type:
+                            Select Type*:
                         </label>
                         <select
                             name="type"
@@ -338,27 +368,28 @@ const AddProductPlan = () => {
                             <option value="" >
                                 Select Type
                             </option>
-                            <option value="Product plan">Product plan</option>
+                            <option value="Floor plan">Floor plan</option>
                             <option value="Master plan">Master plan</option>
                         </select>
                     </div>
 
-                    {/* Project ID Field */}
+                    
+                     {/* Project ID Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Select Product:
+                            Select Project*:
                         </label>
                         <select
-                            name="productid"
-                            value={formData.productid}
+                            name="projectid"
+                            value={formData.projectid}
                             onChange={handleChange}
                             className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
                             required
                         >
                             <option value="" >
-                                Select Product
+                                Select Project
                             </option>
-                            {ProjectProduct.map((p) => (
+                            {Project.map((p) => (
                                 <option key={p._id} value={p._id} >
                                     {p.name}
                                 </option>
@@ -367,16 +398,16 @@ const AddProductPlan = () => {
 
                         </select>
                     </div>
-                  
-   
 
-               
+
+
+
 
 
                     {/* Name Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            {formData.type == 'Product plan' ? 'Product Plan Name' : 'Master Plan Name'}
+                            Plan Name*
                         </label>
                         <input
                             type="text"
@@ -392,7 +423,7 @@ const AddProductPlan = () => {
                     {/* Description Field */}
                     <div className="mb-4">
                         <label htmlFor="desc" className="block text-sm font-medium text-gray-700">
-                            {formData.type == 'Product plan' ? 'Product Plan Description' : 'Master Plan Description'}
+                            Plan Description*
                         </label>
                         <textarea
                             id="desc"
@@ -410,7 +441,7 @@ const AddProductPlan = () => {
                     {/* Video Field */}
                     <div className="mb-4">
                         <label htmlFor="video" className="block text-sm font-medium text-gray-700">
-                            {formData.type == 'Product plan' ? 'Product Plan Video URL' : 'Master Plan Video URL'}
+                             Plan Video URL
                         </label>
                         <input
                             type="text"
@@ -423,66 +454,68 @@ const AddProductPlan = () => {
                     </div>
 
                     {/* Area Field */}
-                    <div className="space-y-2 gap-5 mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{formData.type == 'Product plan' ? 'Product Plan Areas' : 'Master Plan Areas'}</label>
-                        {formData.plans.map((area, index) => (
-                            <div key={index} className="mt-2">
-                                <div className="">
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={area.name}
-                                        onChange={(e) => handleAreaChange(e, index)}
-                                        placeholder={formData.type == 'Product plan' ? 'Plan Area type' : "title"}
-                                        className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                        required
-                                    />
-                                </div>
+                   <div className="space-y-2 gap-5 mb-4">
+    <label className="block text-sm font-medium text-gray-700">Plan Areas*</label>
+    {formData.plans.map((area, index) => (
+        <div key={index} className="mt-2">
+            <div className="">
+                <input
+                    type="text"
+                    name="name"
+                    value={area.name}
+                    onChange={(e) => handleAreaChange(e, index)}
+                    placeholder={formData.type === 'Product plan' ? 'Plan Area type' : "title"}
+                    className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                />
+            </div>
 
-                                <div className="">
-                                    <input
-                                        type="text"
-                                        name="desc"
-                                        value={area.desc}
-                                        onChange={(e) => handleAreaChange(e, index)}
-                                        placeholder={formData.type == 'Product plan' ? 'Plan Area value' : 'sub title'}
-                                        className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            <div className="">
+                <input
+                    type="text"
+                    name="desc"
+                    value={area.desc}
+                    onChange={(e) => handleAreaChange(e, index)}
+                    placeholder={formData.type === 'Product plan' ? 'Plan Area value' : 'sub title'}
+                    className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+            </div>
 
-                                    />
-                                </div>
+            {/* Buttons */}
+            <div className="flex justify-between">
+                <div>
+                    <Button
+                        type="button"
+                        size="small"
+                        onClick={addArea}
+                        className="p-2 bg-gray-500 text-white rounded-md mt-4 hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
+                    >
+                        {formData.type === 'Product plan' ? 'Add Area' : 'Add Point'}
+                    </Button>
+                </div>
 
-                                {/* Buttons */}
-                                <div className="flex justify-between">
-                                    <div>
-                                        <Button
-                                            type="button"
-                                            size="small"
-                                            onClick={addArea}
-                                            className="p-2 bg-gray-500 text-white rounded-md mt-4 hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
-                                        >
-                                            {formData.type == 'Product plan' ? 'Add Area' : 'Add Point'}
-                                        </Button>
-                                    </div>
+               {index > 0 ? ( 
+    <div>
+        {/* Remove Section Button */}
+        <Button
+            size="small"
+            type="button"
+            onClick={() => removeArea(index)}
+            className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
+        >
+            Remove
+        </Button>
+    </div>
+) : null}
 
-                                    <div>
-                                        {/* Remove Section Button */}
-                                        <Button
-                                            size="small"
-                                            type="button"
-                                            onClick={() => removeArea(index)}
-                                            className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
-                                        >
-                                            Remove
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            </div>
+        </div>
+    ))}
+</div>
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700"> {formData.type == 'Product plan' ? 'Product Plan Status' : 'Master Plan Status'} </label>
+                        <label className="block text-sm font-medium text-gray-700">Plan Status* </label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
@@ -550,6 +583,8 @@ const AddProductPlan = () => {
                     </div>
                 </form>
             </div>
+            )}
+           
         </div>
     );
 };

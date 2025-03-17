@@ -1,3 +1,4 @@
+import { StoreContext } from "@/context/context";
 import {
   Card,
   Input,
@@ -5,10 +6,135 @@ import {
   Button,
   Typography,
 } from "@material-tailwind/react";
-import { Link } from "react-router-dom";
+import axios from "axios";
+import { useContext, useEffect, useState,  } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
 export function SignIn() {
+  const {setAgentId,data,password, agentid, url, SetTostMsg,adminData, setAdminData} = useContext(StoreContext)
+   const navigate = useNavigate();
+   const [loading, setloading] = useState(true)
+   const [Btnloading, setBtnloading] = useState(false)
+
+  const [formData, SetFormData] = useState({
+    email:"",
+    password:""
+  })
+
+  const handleChange = (e)=>{
+    const {name, value} = e.target
+    SetFormData({...formData, [name]: value})
+  }
+
+  const setLocalStorageWithExpiry = (key, value, ttl) => {
+    const now = new Date();
+  
+    const item = {
+      value: value,
+      expiry: now.getTime() + ttl, // Current time + Time-to-live (TTL)
+    };
+  
+    localStorage.setItem(key, JSON.stringify(item));
+  };
+  
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+  
+    try {
+      const response = await axios.post(`${data.url}/api/admin/login`, formData);
+  
+      console.log(response);
+      
+  
+      if (response.data.token) {
+        setBtnloading(true);
+            SetTostMsg(response.data.message);
+            localStorage.setItem("token", response.data.token);
+
+            // Fetch admin data immediately after login
+            const adminResponse = await axios.get(`${data.url}/api/admin/admin`, {
+                headers: { Authorization: `Bearer ${response.data.token}` },
+            });
+
+            // Store in context
+            setAdminData(adminResponse.data.message);
+
+            setBtnloading(false);
+            navigate('/dashboard/');
+       
+       
+       
+          // Pass token in the headers for the verify token request
+        //   const verifyResponse = await axios.get(`${url}/api/admin/verifytoken`,{
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //       agentid,
+        //       password,
+        //       token,
+             
+        //     },
+        //   });
+        //   console.log(verifyResponse);
+        //   if(verifyResponse.data.success){
+        //    // Save verifyResponse data to localStorage for 2 minutes
+        //    //24 hours 24 * 60 * 60 * 1000
+        // setLocalStorageWithExpiry('adminData', verifyResponse.data, 1 * 60 * 60 * 1000);
+
+        // const storedAdminData = localStorage.getItem('adminData');
+
+        // if (storedAdminData) {
+        //  setadmin(JSON.parse(storedAdminData));
+           
+        // } 
+        
+        // const AdminData = localStorage.getItem('adminData');
+        // const Data = JSON.parse(AdminData)
+        // if (Data) {
+        //   const a = setadmin(Data);
+        //   console.log(Data)
+        //   setAgentId(Data.value.agentid)
+        //     SetTostMsg(`Welcome to Dashboard ${verifyResponse.data.name}`);
+        //     setBtnloading(false)
+        //   navigate('/dashboard');
+        //   }// Handle success
+          
+      
+      // }else{
+      //   toast.error(response.data.message);
+      // }
+    }else{
+      toast.error(response.data.message);
+    }
+    }catch (error) {
+      console.log('Login Error:', error);
+    }
+  };
+  
+  // useEffect(()=>{
+  //   console.log(formData)
+  // },[formData])
+
+  useEffect(() => {
+    // Simulating an async check, you can replace it with actual async operations if needed
+    setTimeout(() => {
+        setloading(false);
+    }, 1000); // Adjust the delay as per your needs
+   
+    if(adminData){
+     navigate('/dashboard')
+   }
+}, [adminData]);
+
+    if(loading ){
+        return   <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
+      </div>
+    }
+
   return (
     <section className="m-8 flex gap-4">
       <div className="w-full lg:w-3/5 mt-24">
@@ -16,13 +142,18 @@ export function SignIn() {
           <Typography variant="h2" className="font-bold mb-4">Sign In</Typography>
           <Typography variant="paragraph" color="blue-gray" className="text-lg font-normal">Enter your email and password to Sign In.</Typography>
         </div>
-        <form className="mt-8 mb-2 mx-auto w-80 max-w-screen-lg lg:w-1/2">
+        <form  
+        onSubmit={handleSubmit}
+         className="mt-8 mb-2 mx-auto w-80 max-w-screen-lg lg:w-1/2">
           <div className="mb-1 flex flex-col gap-6">
             <Typography variant="small" color="blue-gray" className="-mb-3 font-medium">
               Your email
             </Typography>
             <Input
               size="lg"
+              value={FormData.email}
+              onChange={handleChange}
+              name="email"
               placeholder="name@mail.com"
               className=" !border-t-blue-gray-200 focus:!border-t-gray-900"
               labelProps={{
@@ -34,6 +165,9 @@ export function SignIn() {
             </Typography>
             <Input
               type="password"
+              value={FormData.password}
+              onChange={handleChange}
+              name="password"
               size="lg"
               placeholder="********"
               className=" !border-t-blue-gray-200 focus:!border-t-gray-900"
@@ -42,7 +176,7 @@ export function SignIn() {
               }}
             />
           </div>
-          <Checkbox
+          {/* <Checkbox
             label={
               <Typography
                 variant="small"
@@ -59,12 +193,21 @@ export function SignIn() {
               </Typography>
             }
             containerProps={{ className: "-ml-2.5" }}
-          />
-          <Button className="mt-6" fullWidth>
-            Sign In
-          </Button>
+          /> */}
+           <Button type="submit" className="mt-6 flex justify-center items-center" fullWidth>
+        {Btnloading ? (
+          <>
+            <span className="mr-2">Loading...</span>
+            <div className="flex items-center justify-center h-1">
+        <div className="animate-spin rounded-full h-5 w-5 border-t-4 border-blue-500 border-solid"></div>
+      </div>
+          </>
+        ) : (
+          "SIGN IN"
+        )}
+      </Button>
 
-          <div className="flex items-center justify-between gap-2 mt-6">
+          {/* <div className="flex items-center justify-between gap-2 mt-6">
             <Checkbox
               label={
                 <Typography
@@ -108,7 +251,7 @@ export function SignIn() {
           <Typography variant="paragraph" className="text-center text-blue-gray-500 font-medium mt-4">
             Not registered?
             <Link to="/auth/sign-up" className="text-gray-900 ml-1">Create account</Link>
-          </Typography>
+          </Typography> */}
         </form>
 
       </div>

@@ -4,14 +4,15 @@ import { StoreContext } from "@/context/Context";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../loader/Loader";
 
 const UpdateProductPlan = () => {
     const navigate = useNavigate();
-    const { EditProductPlan, data, SetTostMsg, ProjectProduct, GetProjectProduct } = useContext(StoreContext);
+    const {Project, Token, EditProductPlan, GetDetailProjectData, data, SetTostMsg, ProjectProduct, GetProjectProduct,  Isloading, setIsloading } = useContext(StoreContext);
 
     // State for form data
     const [formData, setFormData] = useState({
-        productid: "",
+        projectid: "",
         type:"",
         name: "",
         desc: "",
@@ -27,10 +28,11 @@ const UpdateProductPlan = () => {
          // Initialize form data with the product to be edited
             useEffect(() => {
                 if (EditProductPlan) {
+                    GetDetailProjectData()
                     const deepCopyEditProductPlan = JSON.parse(JSON.stringify(EditProductPlan));
         
                     setFormData({
-                        productid: deepCopyEditProductPlan.productid || "",
+                        projectid: deepCopyEditProductPlan.projectid || "",
                         type: deepCopyEditProductPlan.type || "",
                         name: deepCopyEditProductPlan.name || "",
                         desc: deepCopyEditProductPlan.desc || "",
@@ -38,7 +40,7 @@ const UpdateProductPlan = () => {
                         video: deepCopyEditProductPlan.video || "",
                         plans: deepCopyEditProductPlan.plans ||  [{ name: "", desc:""}],
                         file: deepCopyEditProductPlan.file || "",
-                        status: deepCopyEditProductPlan.status || null,
+                        status: deepCopyEditProductPlan.status !== undefined ?  deepCopyEditProductPlan.status : true ,
                         metatitle: deepCopyEditProductPlan.metatitle || "",
                         metadesc: deepCopyEditProductPlan.metadesc || "",
                         addedby: deepCopyEditProductPlan.addedby || data.id,
@@ -132,6 +134,8 @@ const UpdateProductPlan = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+         setIsloading(true)
+
              // Step 1: Find images to delete
     const imagesToDelete = EditProductPlan.gallery.filter(
         (img) =>
@@ -159,7 +163,13 @@ const imagesToDeleteArray = [
           const response =   await Promise.all(
                 imagesToDeleteArray.map(async (file) => {
                     console.log(file)
-                   const res =  await axios.delete(`${data.url}/api/admin/upload/productplan/${file.file}`);
+                   const res =  await axios.delete(`${data.url}/api/admin/upload/productplan/${file.file}`, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
                    console.log(res)
                 })
             );
@@ -172,10 +182,12 @@ const imagesToDeleteArray = [
                     formDataImage.append('file', image.galleryimage);
 
                     const response = await axios.post(`${data.url}/api/admin/upload/productplan`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
+                headers: {
+               
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
                     return response.data.file; // Assuming the response contains the uploaded image URL
                 }
                 return image.galleryimage; // If no file, return the current value (could be URL)
@@ -199,19 +211,29 @@ const imagesToDeleteArray = [
             };
 
             // Send the updated form data to your API
-            const response = await axios.put(`${data.url}/api/admin/productplan/${EditProductPlan._id}`, updatedFormData);
+            const response = await axios.put(`${data.url}/api/admin/productplan/${EditProductPlan._id}`, updatedFormData , {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             console.log(response);
             if (response.data.success) {
                 console.log('Product updated successfully:', response.data);
                 SetTostMsg(response.data.message);
                 navigate('/dashboard/productplans');
+                setIsloading(false)
                 // Handle success (e.g., redirect, show success message, etc.)
             } else {
                 console.error('Error updating product:', response.data);
+                 setIsloading(false)
                 // Handle error (e.g., show error message)
             }
         } catch (error) {
             console.error('Error in form submission:', error);
+            toast.error('error occured')
+             setIsloading(false)
             // Handle error (e.g., show error message)
         }
     };
@@ -232,7 +254,11 @@ const imagesToDeleteArray = [
 
         try {
             const response = await axios.post(`${data.url}/api/admin/upload/productplan`, fileData, {
-                headers: { "Content-Type": "multipart/form-data" },
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
             });
 
             if (response.data.success) {
@@ -263,7 +289,13 @@ const imagesToDeleteArray = [
         }
     
         try {
-            const response = await axios.delete(`${data.url}/api/admin/upload/productplan/${formData.file}`);
+            const response = await axios.delete(`${data.url}/api/admin/upload/productplan/${formData.file}`, {
+                headers: {
+            
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
     
             if (response.data.success) {
                 setFormData((prev) => ({ ...prev, file: "" })); // Remove file from formData
@@ -279,11 +311,17 @@ const imagesToDeleteArray = [
 
     return (
         <div>
-            <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4 text-center"> {formData.type == 'Product plan' ? 'Update Product Plan' : 'Update Master Plan'} </h2>
+            { Isloading ? (
+                <Loader/>
+            ): (
+ <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+                <h2 className="text-xl font-bold mb-4 text-center">Update Plan</h2>
                 <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
 
                 <div>
+                     <label className="block text-sm font-medium text-gray-700">
+                            Upload file (Optional)
+                        </label>
             {/* File Upload Input */}
             <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
             <input
@@ -316,7 +354,7 @@ const imagesToDeleteArray = [
                      {/* Gallery Images Field */}
                      <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">
-                            Gallery Images
+                            Gallery Images*
                         </Typography>
                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                             <input
@@ -330,11 +368,11 @@ const imagesToDeleteArray = [
                             <span className="text-gray-700">Choose a file</span>
                         </label>
                         {/* Display Image Previews with Alt Inputs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {formData.gallery.map((image, index) => (
                                 <div
                                     key={index}
-                                    className=" flex flex-wrap  space-y-2 group"
+                                    className=" flex flex-wrap  gap-2 space-y-1 group"
                                 >
                                     {/* Image */}
                                     {image.galleryimage  ? (
@@ -343,7 +381,7 @@ const imagesToDeleteArray = [
                                            <img
                                                   src={image.galleryimage instanceof File ? URL.createObjectURL(image.galleryimage) : `${data.url}/Images/productplan/${image.galleryimage}`} 
                                                   alt={image.alt || "Uploaded image"}
-                                                className="h-32 w-full object-cover rounded-lg border"
+                                                className="h-32 w-60 object-cover rounded-lg border"
                                             />
                                             {/* Remove Button (only visible on hover) */}
                                             <button
@@ -373,7 +411,7 @@ const imagesToDeleteArray = [
 
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Select Type:
+                            Select Type*:
                         </label>
                         <select
                             name="type"
@@ -385,27 +423,27 @@ const imagesToDeleteArray = [
                             <option value="" >
                                 Select Type
                             </option>
-                            <option value="Product plan">Product plan</option>
+                            <option value="Floor plan">Floor plan</option>
                             <option value="Master plan">Master plan</option>
                             </select>
                             </div>
 
                     {/* Project ID Field */}
-                    <div className="mb-4">
+                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Select Product:
+                            Select Project*:
                         </label>
                         <select
-                            name="productid"
-                            value={formData.productid}
+                            name="projectid"
+                            value={formData.projectid}
                             onChange={handleChange}
                             className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
                             required
                         >
                             <option value="" >
-                                Select Product
+                                Select Project
                             </option>
-                            {ProjectProduct.map((p) => (
+                            {Project.map((p) => (
                                 <option key={p._id} value={p._id} >
                                     {p.name}
                                 </option>
@@ -418,7 +456,7 @@ const imagesToDeleteArray = [
                     {/* Name Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                        {formData.type == 'Product plan'? 'Product Plan Name': 'Master Plan Name'}
+                         Plan Name*
                         </label>
                         <input
                             type="text"
@@ -434,7 +472,7 @@ const imagesToDeleteArray = [
                     {/* Description Field */}
                     <div className="mb-4">
                         <label htmlFor="desc" className="block text-sm font-medium text-gray-700">
-                        {formData.type == 'Product plan'? 'Product Plan Description' :'Master Plan Description'}
+                        Description*
                         </label>
                         <textarea
                             id="desc"
@@ -452,7 +490,7 @@ const imagesToDeleteArray = [
                     {/* Video Field */}
                     <div className="mb-4">
                         <label htmlFor="video" className="block text-sm font-medium text-gray-700">
-                        {formData.type == 'Product plan' ? 'Product Plan Video URL': 'Master Plan Video URL'}
+                         Plan Video URL
                         </label>
                         <input
                             type="text"
@@ -466,7 +504,7 @@ const imagesToDeleteArray = [
 
                     {/* Area Field */}
                     <div className="space-y-2 gap-5 mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{formData.type == 'Product plan' ?'Product Plan Areas' : 'Master Plan Areas'}</label>
+                        <label className="block text-sm font-medium text-gray-700">Plan Areas*</label>
                         {formData.plans.map((area, index) => (
                             <div key={index} className="mt-2">
                                 <div className="">
@@ -506,17 +544,19 @@ const imagesToDeleteArray = [
                                         </Button>
                                     </div>
 
-                                    <div>
-                                        {/* Remove Section Button */}
-                                        <Button
-                                            size="small"
-                                            type="button"
-                                            onClick={() => removeArea(index)}
-                                            className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
-                                        >
-                                            Remove
-                                        </Button>
-                                    </div>
+                                      {index > 0 ? ( 
+                                        <div>
+                                            {/* Remove Section Button */}
+                                            <Button
+                                                size="small"
+                                                type="button"
+                                                onClick={() => removeArea(index)}
+                                                className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ) : null}
                                 </div>
                             </div>
                         ))}
@@ -524,7 +564,7 @@ const imagesToDeleteArray = [
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700"> {formData.type =='Product plan'? 'Product Plan Status':'Master Plan Status'} </label>
+                        <label className="block text-sm font-medium text-gray-700">Plan Status* </label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
@@ -587,11 +627,13 @@ const imagesToDeleteArray = [
                             type="submit"
                             className="w-40 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                         >
-                            Submit
+                            Update
                         </button>
                     </div>
                 </form>
             </div>
+            )}
+           
         </div>
     );
 };

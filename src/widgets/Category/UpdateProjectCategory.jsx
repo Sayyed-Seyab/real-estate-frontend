@@ -4,9 +4,10 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../loader/Loader";
 
 export default function UpdateProjectCategory() {
-    const { data, SetTostMsg, EditProjectCategory, setEditProjectCategory, Projectparent } = useContext(StoreContext);
+    const { data, Token, SetTostMsg, EditProjectCategory, GetProjectParent, setEditProjectCategory, Projectparent,  Isloading, setIsloading } = useContext(StoreContext);
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -24,12 +25,14 @@ export default function UpdateProjectCategory() {
     // Prefill form if EditProjectCategory is provided
     useEffect(() => {
         if (EditProjectCategory) {
+            GetProjectParent()
             setFormData((prevFormData) => ({
                 ...prevFormData,
                 parentid: EditProjectCategory.parentid || "",
+                alt: EditProjectCategory.alt || "",
                 name: EditProjectCategory.name || "",
                 description: EditProjectCategory.description || "",
-                status: EditProjectCategory.status,
+                status: EditProjectCategory.status !== undefined ?  EditProjectCategory.status : true ,
                 addedby: EditProjectCategory.addedby || data.id,
                 categoryimage: null, // Set null to allow new uploads
             }));
@@ -65,117 +68,141 @@ console.log(formData)
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        // Prepare FormData outside the block
+    e.preventDefault();
+    setIsloading(true);
+
+    try {
+        let newImagePath = formData.categoryimage;
         const uploadData = new FormData();
-    
-        try {
-            if (formData.categoryimage instanceof File) {
-                console.log("New file selected, handling old image deletion, upload, and category update...");
-    
-                // Append the file to FormData
-                uploadData.append("file", formData.categoryimage);
-    
-                // Promise for deleting the old image
-                const deleteOldImagePromise = axios.delete(
-                    `${data.url}/api/admin/upload/category/${EditProjectCategory.categoryimage}`
-                );
-    
-                // Promise for uploading the new image
-                const uploadNewImagePromise = axios.post(
-                    `${data.url}/api/admin/upload/category`,
-                    uploadData,
-                    { headers: { "Content-Type": "multipart/form-data" } }
-                );
-    
-                // Execute promises for delete and upload in parallel
-                const [deleteResponse, uploadResponse] = await Promise.all([
-                    deleteOldImagePromise,
-                    uploadNewImagePromise,
-                ]);
-    
-                // Check results
-                if (!deleteResponse.data.success) {
-                    toast.error("Failed to delete the old image.");
-                    return; // Stop if deletion fails
-                }
-    
-                if (!uploadResponse.data.success) {
-                    toast.error("Failed to upload the new image.");
-                    return; // Stop if upload fails
-                }
-    
-                console.log("Old image deleted and new image uploaded successfully");
-                formData.categoryimage = uploadResponse.data.file; // Update file path in formData
-            }
-    
-            // Update the category
-            const updateResponse = await axios.put(
-                `${data.url}/api/admin/projectcategory/${EditProjectCategory._id}`,
-                {
-                    parentid: formData.parentid,
-                    categoryimage: formData.categoryimage, // New or existing image path
-                    name: formData.name,
-                    description: formData.description,
-                    status: formData.status,
-                    lasteditby: formData.lasteditby,
-                    addedby: formData.addedby,
+
+        // 1️⃣ CHECK IF A NEW IMAGE IS SELECTED
+        if (formData.categoryimage instanceof File) {
+            uploadData.append("file", formData.categoryimage);
+
+            // If there is an old image, delete it first
+            if (EditProjectCategory?.categoryimage) {
+                console.log("Old image exists, deleting before uploading new one...");
+                
+                await axios
+                    .delete(`${data.url}/api/admin/upload/category/${EditProjectCategory.categoryimage}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
                 },
-                { headers: { "Content-Type": "application/json" } }
-            );
-    
-            // Check update response
-            if (updateResponse.data.success) {
-                toast.success("Category updated successfully!");
-                setEditProjectCategory(null); // Clear the EditProjectCategory state
-                navigate("/dashboard/project-category");
-            } else {
-                toast.error(updateResponse.data.message);
+                withCredentials: true, // Enable credentials
+            })
+                    .then((response) => {
+                        if (!response.data.success) {
+                            toast.error("Failed to delete old image.");
+                             setIsloading(false)
+                            throw new Error("Old image deletion failed");
+                            
+                        }
+                        console.log("Old image deleted successfully");
+                    })
+                    .catch((error) => console.error("Error deleting old image:", error));
             }
-        } catch (error) {
-            console.error("Error during the operation:", error);
-            toast.error("An error occurred while updating the category.");
+
+            // 2️⃣ UPLOAD NEW IMAGE
+            console.log("Uploading new image...");
+            await axios
+                .post(`${data.url}/api/admin/upload/category`, uploadData, {
+                headers: {
+                  
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            })
+                .then((response) => {
+                    if (!response.data.success) {
+                        toast.error("Image upload failed.");
+                         setIsloading(false)
+                        throw new Error("Image upload failed");
+                    }
+                    console.log("New image uploaded successfully");
+                    newImagePath = response.data.file; // Set new image path
+                })
+                .catch((error) => console.error("Error uploading new image:", error));
         }
-    };
+
+        // 3️⃣ UPDATE CATEGORY WITH NEW OR EXISTING IMAGE
+        const updateResponse = await axios.put(
+            `${data.url}/api/admin/projectcategory/${EditProjectCategory._id}`,
+            { ...formData, categoryimage: newImagePath }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            }
+        );
+
+        if (updateResponse.data.success) {
+            toast.success("Category updated successfully!");
+            setEditProjectCategory(null);
+            navigate("/dashboard/project-category");
+        } else {
+            toast.error(updateResponse.data.message);
+             setIsloading(false)
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        toast.error("An error occurred while updating the category.");
+         setIsloading(false)
+    } finally {
+        setIsloading(false);
+    }
+};
+
     
 
     return (
         <div>
-            <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+            { Isloading ? (
+                <Loader/>
+            ):(
+                 <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center">Update Project Category</h2>
                 <form onSubmit={handleSubmit}>
                     {/* Category Image */}
                     <div className="space-y-2 mb-4">
-                        <Typography variant="small" className="font-medium">
-                            Category Image
-                        </Typography>
-                        <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                name="categoryimage"
-                                onChange={handleImageChange}
-                                className="hidden"
-                            />
-                            <span className="text-gray-700">Choose a file</span>
-                        </label>
-                        {PreviewImage && (
-                            <img
-                                src={PreviewImage}
-                                alt="Preview"
-                                className="mt-4  w-80 object-cover rounded-lg border"
-                            />
-                        )}
+    <Typography variant="small" className="font-medium">
+        Category Image
+    </Typography>
+    <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+        <input
+            type="file"
+            accept="image/*"
+            name="categoryimage"
+            onChange={handleImageChange}
+            className="hidden"
+        />
+        <span className="text-gray-700">Choose a file</span>
+    </label>
 
-                        {
-                            
-                        }
-                    </div>
+    {PreviewImage && (
+        <div> {/* Wrapped in a div to prevent JSX error */}
+            <img
+                src={PreviewImage}
+                alt="Preview"
+                className="mt-4 w-80 object-cover rounded-lg border"
+            />
+            <input
+                type="text"
+                placeholder="Enter alt text"
+                name="alt"
+                value={formData.alt}
+                onChange={handleChange}
+                className="mt-2 w-80 px-2 py-1 border rounded-md"
+            />
+        </div>
+    )}
+</div>
+
 
                     {/* Parent ID Dropdown */}
                     <div className="form-group">
-                        <label className="block text-gray-700 font-medium mb-2">Select Parent:</label>
+                        <label className="block text-gray-700 font-medium mb-2">Select Parent Project* :</label>
                         <select
                             name="parentid"
                             value={formData.parentid || ""}
@@ -195,7 +222,7 @@ console.log(formData)
                     {/* Name Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Category Name
+                            Category Name*
                         </label>
                         <input
                             type="text"
@@ -220,13 +247,13 @@ console.log(formData)
                             onChange={handleChange}
                             rows="4"
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            required
+                           
                         ></textarea>
                     </div>
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Category Status</label>
+                        <label className="block text-sm font-medium text-gray-700">Project Status*</label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
@@ -257,13 +284,15 @@ console.log(formData)
                     <div>
                         <button
                             type="submit"
-                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            className=" bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                             Update Category
                         </button>
                     </div>
                 </form>
             </div>
+            )}
+           
         </div>
     );
 }

@@ -4,15 +4,18 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../loader/Loader";
 
 
 export default function AddProjectCategory() {
-    const { data, SetTostMsg, tostMsg, Projectparent } = useContext(StoreContext)
+    const { data, Token, SetTostMsg, tostMsg, Projectparent,GetProjectParent,  Isloading, setIsloading } = useContext(StoreContext)
     const navigate = useNavigate()
     console.log(data)
     const [formData, setFormData] = useState({
         parentid:"",
         categoryimage: "",
+        alt:'',
+        alt:'',
         name: "",
         description: "",
         status: null,
@@ -40,72 +43,92 @@ export default function AddProjectCategory() {
         }
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+   const handleSubmit = async (e) => {
+    e.preventDefault();
+     setIsloading(true)
 
-        
-    
-        // Prepare FormData for file upload
-        const uploadData = new FormData();
-        uploadData.append("file", formData.categoryimage); // Ensure this matches your backend field
-    
-        try {
-            // Upload the file first
+    try {
+        let uploadedImagePath = formData.categoryimage; // Default to existing value or null
+
+        // If an image is selected, upload it
+        if (formData.categoryimage instanceof File) {
+            const uploadData = new FormData();
+            uploadData.append("file", formData.categoryimage);
+
             const uploadResponse = await axios.post(
                 `${data.url}/api/admin/upload/category`,
-                uploadData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
-    
-            console.log(uploadResponse);
-    
-            if (uploadResponse.data.success) {
-                // Update formData with the uploaded file path
-                setFormData((prevFormData) => ({
-                    ...prevFormData,
-                    categoryimage: uploadResponse.data.file, // Save the file path/object
-                }));
-    
-                // Send the updated formData to the backend
-                const categoryResponse = await axios.post(
-                    `${data.url}/api/admin/projectcategory`,
-                    {
-                        parentid: formData.parentid,
-                        categoryimage: uploadResponse.data.file, // Send file path
-                        name: formData.name,
-                        description: formData.description,
-                        status: formData.status,
-                        addedby: formData.addedby,
-                    },
-                    { headers: { "Content-Type": "application/json" } }
-                );
-    
-                console.log(categoryResponse);
-    
-                if (categoryResponse.data.success) {
-                    SetTostMsg(categoryResponse.data.message);
-               navigate('/dashboard/project-category')
-                    
-                } else {
-                    toast.error(categoryResponse.data.message);
-                }
-            } else {
-                toast.error(uploadResponse.data.message);
+                uploadData, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
             }
-        } catch (error) {
-            console.error("Error submitting form:", error);
+            );
+
+            console.log(uploadResponse);
+
+            if (!uploadResponse.data.success) {
+                toast.error("Image upload failed.");
+                 setIsloading(false)
+                return;
+            }
+
+            uploadedImagePath = uploadResponse.data.file; // Get the uploaded image path
         }
-    };
+
+        // Send the form data with or without image
+        const categoryResponse = await axios.post(
+            `${data.url}/api/admin/projectcategory`,
+            {
+                parentid: formData.parentid,
+                categoryimage: uploadedImagePath, // Only send if uploaded or existing
+                alt:formData.alt,
+                name: formData.name,
+                description: formData.description,
+                alt:formData.alt,
+                status: formData.status,
+                addedby: formData.addedby,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            }
+        );
+
+        console.log(categoryResponse);
+
+        if (categoryResponse.data.success) {
+            toast.success(categoryResponse.data.message);
+            navigate('/dashboard/project-category');
+        setIsloading(false)
+        } else {
+            toast.error(categoryResponse.data.message);
+             setIsloading(false)
+        }
+    } catch (error) {
+        console.error("Error submitting form:", error);
+        toast.error("An error occurred while submitting.");
+         setIsloading(false)
+    }
+};
+
     
     useEffect(() => {
+        GetProjectParent()
         console.log(formData)
     }, [formData])
     return (
         <div>
-            <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+            { Isloading ? (
+                <Loader/>
+            ):(
+                 <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center">Add Project Category</h2>
                 <form onSubmit={handleSubmit}>
-                    <div className="space-y-2 mb-4">
+                                      <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">
                             Category Image
                         </Typography>
@@ -113,24 +136,35 @@ export default function AddProjectCategory() {
                             <input
                                 type="file"
                                 accept="image/*"
-                                name="image"
+                                name="categoryimage"
                                 onChange={handleImageChange}
                                 className="hidden"
                             />
                             <span className="text-gray-700">Choose a file</span>
                         </label>
+                    
                         {PreviewImage && (
-                            <img
-                                src={PreviewImage}
-                                alt="Selected City"
-                                className="mt-4  w-80 object-cover rounded-lg border"
-                            />
+                            <div> {/* Wrapped in a div to prevent JSX error */}
+                                <img
+                                    src={PreviewImage}
+                                    alt="Preview"
+                                    className="mt-4 w-80 object-cover rounded-lg border"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Enter alt text"
+                                    name="alt"
+                                    value={formData.alt}
+                                    onChange={handleChange}
+                                    className="mt-2 w-80 px-2 py-1 border rounded-md"
+                                />
+                            </div>
                         )}
                     </div>
 
                      {/* cities */}
                      <div className="form-group">
-                                <label className="block text-gray-700 font-medium mb-2">Select City:</label>
+                                <label className="block text-gray-700 font-medium mb-2">Select Parent Project* :</label>
                                 <select
                                     name="parentid"
                                     value={formData.parentid || ""} // Controlled value
@@ -152,7 +186,7 @@ export default function AddProjectCategory() {
                     <div className="mb-4">
 
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                        Category  Name
+                        Category  Name*
                         </label>
                         <input
                             type="text"
@@ -177,13 +211,13 @@ export default function AddProjectCategory() {
                             onChange={handleChange}
                             rows="4"
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            required
+                           
                         ></textarea>
                     </div>
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Category Status</label>
+                        <label className="block text-sm font-medium text-gray-700">Project Status*</label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
@@ -224,6 +258,8 @@ export default function AddProjectCategory() {
                     </div>
                 </form>
             </div>
+            )}
+           
 
         </div>
     )

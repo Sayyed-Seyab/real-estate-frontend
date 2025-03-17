@@ -1,4 +1,4 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, Navigate, useNavigate } from "react-router-dom";
 import {
   Navbar,
   Typography,
@@ -25,12 +25,25 @@ import {
   setOpenConfigurator,
   setOpenSidenav,
 } from "@/context";
+import { useContext } from "react";
+import { StoreContext } from "@/context/Context";
 
 export function DashboardNavbar() {
+     const { data, adminData,setAdminData , SetTostMsg, tostMsg,setToken,  } = useContext(StoreContext)
   const [controller, dispatch] = useMaterialTailwindController();
   const { fixedNavbar, openSidenav } = controller;
   const { pathname } = useLocation();
   const [layout, page] = pathname.split("/").filter((el) => el !== "");
+  const navigate = useNavigate();
+
+  const logout = async()=>{
+    const token = localStorage.getItem('token');
+    if(token){
+      localStorage.removeItem('token')
+      setAdminData(null)
+      navigate('/')
+    }
+  }
 
   return (
     <Navbar
@@ -75,7 +88,13 @@ export function DashboardNavbar() {
           <div className="mr-auto md:mr-4 md:w-56">
             <Input label="Search" />
           </div>
-          <IconButton
+
+          <div className="">
+           <Button onClick={logout}>Logout</Button>
+          </div>
+
+          
+          {/* <IconButton
             variant="text"
             color="blue-gray"
             className="grid xl:hidden"
@@ -99,8 +118,8 @@ export function DashboardNavbar() {
             >
               <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
             </IconButton>
-          </Link>
-          <Menu>
+          </Link> */}
+          {/* <Menu>
             <MenuHandler>
               <IconButton variant="text" color="blue-gray">
                 <BellIcon className="h-5 w-5 text-blue-gray-500" />
@@ -184,13 +203,13 @@ export function DashboardNavbar() {
             onClick={() => setOpenConfigurator(dispatch, true)}
           >
             <Cog6ToothIcon className="h-5 w-5 text-blue-gray-500" />
-          </IconButton>
+          </IconButton> */}
         </div>
       </div>
     </Navbar>
   );
 }
 
-DashboardNavbar.displayName = "/src/widgets/layout/dashboard-navbar.jsx";
+// DashboardNavbar.displayName = "/src/widgets/layout/dashboard-navbar.jsx";
 
 export default DashboardNavbar;

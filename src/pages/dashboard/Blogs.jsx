@@ -9,7 +9,7 @@ import axios from 'axios';
 import { projectsData } from '@/data';
 
 export default function Blog() {
-  const {data, setloading,   GetBlogs, Blogs, loading,  tostMsg, SetTostMsg, setEditBlog, EditBlog } = useContext(StoreContext);
+  const {data, setloading,   GetBlogs, Blogs, loading,  tostMsg, SetTostMsg, setEditBlog, EditBlog, Token } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
@@ -72,7 +72,13 @@ export default function Blog() {
   
   const handleDelete = async (blog) => {
       try {
-        const isDltImage = await axios.delete(`${data.url}/api/admin/upload/blog/${blog.image}`)
+        const isDltImage = await axios.delete(`${data.url}/api/admin/upload/blog/${blog.image}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            })
         if(isDltImage.data.success){
             // toast.success(isDltImage.data.message)
             const response = await axios.delete(`${data.url}/api/admin/blog/${blog._id}`)
@@ -165,8 +171,8 @@ export default function Blog() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={blog.image ? `${data.url}/Images/blog/${blog.image}` : "/path/to/placeholder.jpg"}
-                                            alt={blog.alt}
+                                            src={blog.image ? `${data.url}/Images/blog/${blog.image}` : "no image"}
+                                            alt={blog.alt || 'No image'}
                                             size="lg"
                                             variant="rounded"
                                             className="w-20"

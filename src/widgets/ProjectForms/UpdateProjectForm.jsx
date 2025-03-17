@@ -3,19 +3,20 @@ import { Button, Typography } from "@material-tailwind/react";
 import alertGhost from "@material-tailwind/react/theme/components/alert/alertGhost";
 import axios from "axios";
 import { instanceOf } from "prop-types";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Loader from "../loader/Loader";
 
 const AddProjectForm = () => {
     const navigate = useNavigate()
-    const { data, ProjectCategories, EditProject,SetTostMsg } = useContext(StoreContext)
+    const { data, Token, ProjectCategories, GetProjectCategories, EditProject,SetTostMsg, Isloading, setIsloading  } = useContext(StoreContext)
     const [step, setStep] = useState(1); // Track the current part of the form
     const [previewgallery, setpreviewgallery] = useState({
         gallery: ""
     })
     const [ImagesToDlt, setImagesToDlt] = useState([])
-
+    const [errors, setErrors] = useState({});
 
     const [formData, setFormData] = useState({
         categories: [],
@@ -23,7 +24,7 @@ const AddProjectForm = () => {
         price: "",
         area: "",
         address: "",
-        accommodation: "",
+        accomodation: "",
         type: "",
         gallery: [{ galleryimage: "", alt: "" }],
         video: "",
@@ -32,9 +33,12 @@ const AddProjectForm = () => {
         metadesc: "",
         producttitle: "",
         productsubtitle: "",
+        amenitytitle:"",
+        amenitydesc:"",
         productdesc: "",
+        nearby:"",
         productplantitle: "",
-        sections1: [{ sectiontype: "", title: "", subtitle: "", desc: "", gallery: [], section1alt: "" }],
+        sections1: [{file:"", sectiontype: "", title: "", subtitle: "", desc: "", gallery: [], section1alt: "" }],
         section2title: "",
         section2subtitle: "",
         section2desc: "",
@@ -43,24 +47,37 @@ const AddProjectForm = () => {
     const [previewImage, setPreviewImage] = useState(null);
     const [projectParent] = useState([{ _id: "1", name: "Parent 1" }, { _id: "2", name: "Parent 2" }]);
     const [eixstfile, setfile] = useState(false)
-
+      const step1Ref = useRef(null); // Ref for step 1 container
+        const step2Ref = useRef(null); // Ref for step 2 container
+// Scroll the container when step changes
+    useEffect(() => {
+        if (step === 1 && step1Ref.current) {
+            step1Ref.current.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll step 1 container
+        } else if (step === 2 && step2Ref.current) {
+            step2Ref.current.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll step 2 container
+        }
+    }, [step]);
 
     useEffect(() => {
         if (EditProject) {
+            GetProjectCategories()
             setFormData({
                 categories: EditProject.categories[0].projectCategory.map(category => ({ id: category._id })) || [{ id: "" }],
                 name: EditProject.name || "",
                 price: EditProject.price || "",
                 area: EditProject.area || "",
                 address: EditProject.address || "",
-                accommodation: EditProject.accommodation || "",
+                accomodation: EditProject.accomodation || "",
                 type: EditProject.type || "",
                 gallery: EditProject.gallery || [{ galleryimage: "", alt: "" }],
                 video: EditProject.video || "",
-                status: EditProject.status || null,
+                status: EditProject.status !== undefined ?  EditProject.status : true ,
                 metatitle: EditProject.metatitle || "",
                 metadesc: EditProject.metadesc || "",
                 producttitle: EditProject.producttitle || "",
+                amenitytitle:EditProject.amenitytitle || "",
+                amenitydesc:EditProject.amenitydesc || "",
+                nearby:EditProject.nearby || "",
                 productsubtitle: EditProject.productsubtitle || "",
                 productdesc: EditProject.productdesc || "",
                 productplantitle: EditProject.productplantitle || "",
@@ -79,13 +96,13 @@ const AddProjectForm = () => {
             // }
         } else {
             // Redirect if no data is available for editing
-            // navigate("/dashboard/project-category");
+            navigate('/dashboard/project')
         }
 
         console.log(ImagesToDlt);
     }, [EditProject, data.url, ImagesToDlt]);
 
-
+console.log(EditProject)
 
     const handleImageUploadSection1 = async (e, sectionIndex) => {
         const files = Array.from(e.target.files);
@@ -99,8 +116,12 @@ const AddProjectForm = () => {
 
             try {
                 const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
 
                 if (response.data.success) {
                     uploadedImages.push({ section1image: response.data.file, section1alt: "" });
@@ -136,7 +157,13 @@ const AddProjectForm = () => {
                 return;
             }
 
-            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`);
+            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
 
             setFormData((prevData) => ({
                 ...prevData,
@@ -169,8 +196,12 @@ const AddProjectForm = () => {
 
             try {
                 const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
 
                 console.log(response)
                 if (response.data.success) {
@@ -207,7 +238,11 @@ const AddProjectForm = () => {
 
         try {
             const response = await axios.post(`${data.url}/api/admin/upload/project`, imageData, {
-                headers: { "Content-Type": "multipart/form-data" },
+                headers: {
+                  
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
             });
 
             if (response.data.success) {
@@ -238,7 +273,13 @@ const AddProjectForm = () => {
             if (!imageUrl) return;
 
             // Send request to delete image from the server
-            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`)
+            await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl}`, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            })
 
             // Update formData to remove the image
             setFormData((prevData) => ({
@@ -262,6 +303,11 @@ const AddProjectForm = () => {
 
         try {
             const response = await axios.delete(`${data.url}/api/admin/upload/project/${imageUrl.galleryimage}`, {
+                headers: {
+                 
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
             });
             if (response.data.success) {
                 setFormData((prev) => ({
@@ -326,6 +372,31 @@ const AddProjectForm = () => {
         }));
     };
 
+       const handleSecAltChange = (e, sectionIndex, imgIndex) => {
+    const { value } = e.target;
+
+    setFormData((prevData) => {
+        const updatedSections = [...prevData.sections1];
+        const updatedGallery = [...updatedSections[sectionIndex].gallery];
+
+        // Ensure we're only updating the alt text of the specific image
+        updatedGallery[imgIndex] = {
+            ...updatedGallery[imgIndex],
+            section1alt: value,
+        };
+
+        updatedSections[sectionIndex] = {
+            ...updatedSections[sectionIndex],
+            gallery: updatedGallery,
+        };
+
+        return {
+            ...prevData,
+            sections1: updatedSections,
+        };
+    });
+};
+
     const handleRemoveImage = (index) => {
         // Filter out the specific image by index
         const updatedformGallery = formData.gallery.filter((_, idx) => idx !== index);
@@ -380,14 +451,80 @@ const AddProjectForm = () => {
         });
     };
 
-    // Handle navigation between parts
+         const validateStep1 = () => {
+    let newErrors = {};
+
+    if (!formData.name) newErrors.name = "Project Name is required";
+     if (formData.gallery.length == 0) newErrors.gallery = "Project gallery is required";
+     if (formData.categories.length == 0) newErrors.categories = "Project categories is required";
+     if (formData.status == null) newErrors.status = "Project status is required";
+    if (!formData.price) newErrors.price = "Project Price is required";
+    if (!formData.area) newErrors.area = "Project Area is required";
+    if (!formData.address) newErrors.address = "Project Address is required";
+    if (!formData.accomodation) newErrors.accomodation = "Project Accomodation is required";
+   
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // Returns true if no errors
+};
+
+const validateStep2 = () => {
+    let newErrors = {};
+
+    if (!formData.producttitle) newErrors.producttitle = "Product Title is required";
+    if (!formData.productplantitle) newErrors.productplantitle = "Product Plan Title is required";
+    if (!formData.amenitytitle) newErrors.amenitytitle = "Amenity Title is required";
+    if (!formData.amenitydesc) newErrors.amenitydesc = "Amenity Description is required";
+
+  
+    
+    formData.sections1.forEach((section, index) => {
+        if (!section.sectiontype) {
+            newErrors[`sectiontype_${index}`] = "Selection type is required.";
+        }
+        if (!section.gallery || section.gallery.length === 0) {
+            newErrors[`gallery_${index}`] = "At least one image is required.";
+        }
+        // if (!section.section1alt) {
+        //     newErrors[`section1alt_${index}`] = "Image Alt text is required.";
+        // }
+        if (!section.title) {
+            newErrors[`title_${index}`] = "Title is required.";
+        }
+    });
+
+  
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // Returns true if no errors
+};
+
+   // Handle navigation between parts
     const nextStep = () => {
-        setStep((prevStep) => prevStep + 1);
+         if (validateStep1()) {
+      setStep((prevStep) => prevStep + 1);
+        forceScrollToTop() 
+    }
+        
+        
     };
 
     const prevStep = () => {
         setStep((prevStep) => prevStep - 1);
+        forceScrollToTop()
     };
+
+    const forceScrollToTop = () => {
+        // Temporarily increase the body height to ensure scrolling works
+        document.body.style.minHeight = '101vh'; // Slightly more than 100vh
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Reset the body height after a short delay
+        setTimeout(() => {
+            document.body.style.minHeight = '';
+        }, 500); // Adjust the delay as needed
+    };
+
     useEffect(() => {
         console.log(formData)
     }, [formData])
@@ -422,15 +559,86 @@ const AddProjectForm = () => {
 
 
 
+ // Handle File Upload
+    const handleFileUpload = async (e, index) => {
+        const file = e.target.files[0]; // Get the selected file
+        if (!file) return;
 
+        const fileData = new FormData();
+        fileData.append("file", file);
+
+        try {
+            const response = await axios.post(`${data.url}/api/admin/upload/project`, fileData, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+
+            if (response.data.success) {
+                const fileUrl = response.data.file; // Get uploaded file URL
+
+                setFormData((prevData) => {
+        const updatedSections = [...prevData.sections1]; // Copy sections array
+        updatedSections[index] = { 
+            ...updatedSections[index], 
+            file: fileUrl  // Assign the file object
+        };
+
+        return {
+            ...prevData,
+            sections1: updatedSections, // Update the sections1 array
+        };
+    });
+                toast.success("File uploaded successfully!");
+                console.log("Uploaded File URL:", fileUrl);
+            } else {
+                toast.error("File upload failed.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error uploading file.");
+        }
+    };
+
+
+    const handleDeleteFile = async () => {
+        if (!formData.file) {
+            alert("No file to delete");
+            return;
+        }
+
+        try {
+            const response = await axios.delete(`${data.url}/api/admin/upload/project/${formData.file}`, {
+                headers: {
+                 
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+
+            if (response.data.success) {
+                setFormData((prev) => ({ ...prev, file: "" })); // Remove file from formData
+                alert("File deleted successfully!");
+            } else {
+                alert("Error deleting file");
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            alert("Error deleting file");
+        }
+    };
 
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.gallery.length == 0) {
-            toast.error('image required')
+        if(!validateStep2()){
+             setIsloading(false)
+            return;
         }
+        setIsloading(true)
 
 
 
@@ -583,19 +791,29 @@ const AddProjectForm = () => {
             // console.log(updatedFormData)
 
             // Send the updated form data to your API
-            const response = await axios.put(`${data.url}/api/admin/project/${EditProject._id}`, formData);
+            const response = await axios.put(`${data.url}/api/admin/project/${EditProject._id}`, formData , {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             console.log(response)
             if (response.data.success) {
                 console.log('Project added successfully:', response.data);
                 SetTostMsg(response.data.message);
                 navigate('/dashboard/project')
+                 setIsloading(false)
                 // Handle success (e.g., redirect, show success message, etc.)
             } else {
                 console.error('Error adding project:', response.data);
+                 setIsloading(false)
                 // Handle error (e.g., show error message)
             }
         } catch (error) {
             console.error('Error in form submission:', error);
+             setIsloading(false)
+             toast.error('error occured')
             // Handle error (e.g., show error message)
         }
     };
@@ -610,16 +828,21 @@ const AddProjectForm = () => {
 
     // Render the form based on the current step
     return (
-        <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
-            <form onSubmit={handleSubmit} className=" max-h-[500px] overflow-y-auto">
+
+        <div>
+            {Isloading ? (
+                <Loader/>
+            ):(
+ <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+            <form onSubmit={handleSubmit} className="">
                 {step === 1 && (
-                    <div className="mt-10 bg-white p-6 rounded-md shadow-md">
+                    <div ref={step1Ref} className="mt-10 bg-white p-6 rounded-md shadow-md">
                         <h2 className="text-xl font-bold mb-4 text-center">Update Project </h2>
                         {/* Project Image */}
                         {/* Project Image */}
                         <div className="space-y-2 mb-4">
                             <Typography variant="small" className="font-medium">
-                                Project Image
+                                Project Image*
                             </Typography>
                             <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                 <input
@@ -632,6 +855,7 @@ const AddProjectForm = () => {
                                 />
                                 <span className="text-gray-700">Choose a file</span>
                             </label>
+                             {errors.gallery && <p className="text-red-500 text-sm">{errors.gallery}</p>}
                             {/* Display Image Previews with Alt Inputs */}
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {formData.gallery ? formData.gallery?.map((image, index) => (
@@ -694,7 +918,7 @@ const AddProjectForm = () => {
 
                             {/* Category Status */}
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Category Status</label>
+                                <label className="block text-sm font-medium text-gray-700">Category Status*</label>
                                 <div className="flex items-center space-x-4 mt-2">
                                     <label className="flex items-center">
                                         <input
@@ -727,7 +951,7 @@ const AddProjectForm = () => {
 
                             <div className="mb-4">
                                 <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
-                                    Project Categories
+                                    Project Categories*
                                 </label>
                                 <select
                                     id="categories"
@@ -746,6 +970,7 @@ const AddProjectForm = () => {
                                         </option>
                                     ))}
                                 </select>
+                                 {errors.categories && <p className="text-red-500 text-sm">{errors.categories}</p>}
                             </div>
 
                             {/* Display selected categories */}
@@ -780,7 +1005,7 @@ const AddProjectForm = () => {
                             {/* Project Name */}
                             <div className="mb-4">
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                    Project Name
+                                    Project Name*
                                 </label>
                                 <input
                                     type="text"
@@ -791,15 +1016,16 @@ const AddProjectForm = () => {
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 />
+                                  {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
                             </div>
 
                             {/* Project Price */}
                             <div className="mb-4">
                                 <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                                    Project Price
+                                    Project Price*
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     id="price"
                                     name="price"
                                     value={formData.price}
@@ -807,12 +1033,13 @@ const AddProjectForm = () => {
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 />
+                                 {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
                             </div>
 
                             {/* Project Area */}
                             <div className="mb-4">
                                 <label htmlFor="area" className="block text-sm font-medium text-gray-700">
-                                    Project Area
+                                    Project Area*
                                 </label>
                                 <input
                                     type="text"
@@ -823,12 +1050,13 @@ const AddProjectForm = () => {
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 />
+                                  {errors.area && <p className="text-red-500 text-sm">{errors.area}</p>}
                             </div>
 
                             {/* Project Address */}
                             <div className="mb-4">
                                 <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                                    Project Address
+                                    Project Address*
                                 </label>
                                 <input
                                     type="text"
@@ -839,27 +1067,29 @@ const AddProjectForm = () => {
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 />
+                                 {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
                             </div>
 
-                            {/* Project Accommodation */}
+                            {/* Project accomodation */}
                             <div className="mb-4">
-                                <label htmlFor="accommodation" className="block text-sm font-medium text-gray-700">
-                                    Project Accommodation
+                                <label htmlFor="accomodation" className="block text-sm font-medium text-gray-700">
+                                    Project Accomodation*
                                 </label>
                                 <input
                                     type="text"
-                                    id="accommodation"
-                                    name="accommodation"
-                                    value={formData.accommodation}
+                                    id="accomodation"
+                                    name="accomodation"
+                                    value={formData.accomodation}
                                     onChange={handleChange}
                                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 />
+                                 {errors.accomodation && <p className="text-red-500 text-sm">{errors.accomodation}</p>}
                             </div>
 
-                            {/* Project Accommodation */}
+                            {/* Project accomodation */}
                             <div className="mb-4">
-                                <label htmlFor="accommodation" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="accomodation" className="block text-sm font-medium text-gray-700">
                                     Project video (Optional)
                                 </label>
                                 <input
@@ -928,38 +1158,27 @@ const AddProjectForm = () => {
                 )}
 
                 {step === 2 && (
-                    <div className="  mt-10 bg-white p-6 rounded-md shadow-md">
+                    <div ref={step2Ref} className="  mt-10 bg-white p-6 rounded-md shadow-md">
                         <h2 className="text-xl font-semibold mb-4">Product Details</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Product Title */}
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Product Title</label>
+                                <label className="block text-sm font-medium text-gray-700">Product Title*</label>
                                 <input
                                     type="text"
                                     name="producttitle"
                                     value={formData.producttitle}
                                     onChange={handleChange}
                                     className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
+                                    
                                 />
+                                 {errors.producttitle && <p className="text-red-500 text-sm">{errors.producttitle}</p>}
                             </div>
-
-                            {/* Product Subtitle */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Product Subtitle</label>
-                                <input
-                                    type="text"
-                                    name="productsubtitle"
-                                    value={formData.productsubtitle}
-                                    onChange={handleChange}
-                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
 
                             {/* Product Plan Title */}
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Product Plan Title</label>
+                                <label className="block text-sm font-medium text-gray-700">Product Plan Title*</label>
                                 <input
                                     type="text"
                                     name="productplantitle"
@@ -967,30 +1186,127 @@ const AddProjectForm = () => {
                                     onChange={handleChange}
                                     className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
                                 />
+                                 {errors.productplantitle && <p className="text-red-500 text-sm">{errors.productplantitle}</p>}
                             </div>
 
-                            {/* Product Description */}
+                            {/* Product Subtitle */}
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Product Description</label>
-                                <textarea
-                                    name="productdesc"
-                                    value={formData.productdesc}
+                                <label className="block text-sm font-medium text-gray-700">Amenties Title*</label>
+                                <input
+                                    type="text"
+                                    name="amenitytitle"
+                                    value={formData.amenitytitle}
                                     onChange={handleChange}
                                     className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
                                 />
+                                  {errors.amenitytitle && <p className="text-red-500 text-sm">{errors.amenitytitle}</p>}
                             </div>
+
+
+                            {/* Product Description */}
+                            <div className="">
+                                <label className="block text-sm font-medium text-gray-700">Amenties Description*</label>
+                                <textarea
+                                    name="amenitydesc"
+                                    value={formData.amenitydesc}
+                                    onChange={handleChange}
+                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
+                                />
+                                 {errors.amenitydesc && <p className="text-red-500 text-sm">{errors.amenitydesc}</p>}
+                            </div>
+
+                             {/* Product Description */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700">Nearby title*</label>
+                               <input
+                                    type="text"
+                                    name="nearby"
+                                    value={formData.nearby}
+                                    onChange={handleChange}
+                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
+                                />
+                                 {errors.nearby && <p className="text-red-500 text-sm">{errors.nearby}</p>}
+                            </div>
+
+                             {/* Product Description */}
+                            {/* <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700">Amenties Description</label>
+                                <textarea
+                                    name="amenitydesc"
+                                    value={formData.nearby}
+                                    onChange={handleChange}
+                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
+                                />
+                                 {errors.nearby && <p className="text-red-500 text-sm">{errors.nearby}</p>}
+                            </div> */}
 
                         </div>
                         {/* Sections 1 */}
-                        <h3 className="text-lg font-semibold mt-6 mb-2">Sections 1</h3>
+                        <h3 className="text-lg font-semibold mt-6 mb-2">Sections*</h3>
                         {formData.sections1.map((section, index) => (
                             <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
+                                  <div className="mb-4">
+                                     <label className="block text-sm font-medium text-gray-700">Upload file (optional)</label>
+                                    {/* File Upload Input */}
+                                    <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.txt,.doc,.docx" // Restrict file types
+                                            onChange={(e)=>handleFileUpload(e,index)}
+                                            className="hidden"
+                                        />
+                                        <span className="text-gray-700">Upload File (PDF)</span>
+                                    </label>
+                                    {/* Show uploaded file URL */}
+                                    {section.file && (
+                                        <div className="mt-4  mb-4">
+                                            <p className="text-green-600 font-medium">File Uploaded:</p>
+                                            <a href={`${data.url}/Files/${section.file}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                                                {section.file}
+                                            </a>
+                                            {/* Delete File Button */}
+                                            <button
+                                                onClick={handleDeleteFile}
+                                                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                  {/* section type */}
+                                <div className="mb-4">
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                        Selection Type*:
+                                    </label>
+                                    <select
+                                        name="sectiontype"
+                                        value={section.sectiontype}
+                                        onChange={(e) => handleSectionChange(e, "sections1", index)}
+                                        className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                                        required
+                                    >
+                                        <option value="" >
+                                            Select Type
+                                        </option>
+                                        <option value="Hero">Hero</option>
+                                        <option value="About">About</option>
+                                        <option value="Location">Location</option>
+                                        <option value="Background">Background</option>
+                                        <option value="Associations">Associations</option>
+                                        <option value="Amenties">Amenties</option>
+                                        <option value="Nearby">Nearby</option>
+                                    </select>
+                                     {errors[`sectiontype_${index}`] && (
+    <p className="text-red-500 text-sm">{errors[`sectiontype_${index}`]}</p>
+)}
+                                </div>
 
                                 <div>
                                     {/* Image */}
                                     <div className="mb-2">
                                         <Typography variant="small" className="font-medium">
-                                            Section Image
+                                            Section Image*
                                         </Typography>
                                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                             <input
@@ -1003,6 +1319,9 @@ const AddProjectForm = () => {
                                             />
                                             <span className="text-gray-700">Choose a file</span>
                                         </label>
+                                         {errors[`gallery_${index}`] && (
+    <p className="text-red-500 text-sm">{errors[`gallery_${index}`]}</p>
+)}
                                     </div>
 
                                     <div className="w-full mb-4">
@@ -1026,6 +1345,20 @@ const AddProjectForm = () => {
                                                             >
                                                                 Remove
                                                             </button>
+                                                                {/* Image Alt */}
+                                    <div className="mb-2">
+                                        <label className="block text-sm font-medium text-gray-700">Image Alt*</label>
+                                        <input
+                                            type="text"
+                                            name="section1alt"
+                                          value={img.section1alt || ""}
+                                            onChange={(e) => handleSecAltChange(e, index, imgIndex)}
+                                            className="mt-2 p-2 border border-gray-300 rounded-md w-60 focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        {errors[`section1alt_${index}`] && (
+                                            <p className="text-red-500 text-sm">{errors[`section1alt_${index}`]}</p>
+                                        )}
+                                    </div>
                                                         </div>
                                                     ) : null // ✅ Skips rendering if no image exists
                                                 )}
@@ -1033,36 +1366,16 @@ const AddProjectForm = () => {
                                         ) : null}
                                     </div>
 
-                                    {/* Image Alt */}
-                                    <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Image Alt</label>
-                                        <input
-                                            type="text"
-                                            name="section1alt"
-                                            value={section.section1alt}
-                                            onChange={(e) => handleSectionChange(e, "sections1", index)}
-                                            className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                                    
 
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Section Type */}
-                                    <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Section Type</label>
-                                        <input
-                                            type="text"
-                                            name="sectiontype"
-                                            value={section.sectiontype}
-                                            onChange={(e) => handleSectionChange(e, "sections1", index)}
-                                            className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                                   
 
                                     {/* Title */}
                                     <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Title</label>
+                                        <label className="block text-sm font-medium text-gray-700">Title*</label>
                                         <input
                                             type="text"
                                             name="title"
@@ -1070,6 +1383,9 @@ const AddProjectForm = () => {
                                             onChange={(e) => handleSectionChange(e, "sections1", index)}
                                             className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
                                         />
+                                           {errors[`title_${index}`] && (
+    <p className="text-red-500 text-sm">{errors[`title_${index}`]}</p>
+)}
                                     </div>
 
                                     {/* Subtitle */}
@@ -1097,33 +1413,29 @@ const AddProjectForm = () => {
                                     </div>
 
                                 </div>
-                                <div className="flex justify-between">
-                                    {index > 0 ? (
-                                        <div>
-                                            {/* Remove Section Button */}
-                                            <Button
-                                                size="small"
-                                                type="Button"
-                                                onClick={() => removeSection("sections1", index)}
-                                                className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
-                                            >
-                                                Remove Section
-                                            </Button>
+                                <div className="flex justify-between items-center">
+    {/* Add Section Button should always be visible */}
+    <Button
+        type="button"
+        onClick={() => addSection("sections1")}
+        className="p-2 bg-gray-700 text-white rounded-md mt-4 hover:bg-green-600 focus:ring-2 focus:ring-green-500"
+    >
+        Add Another Section
+    </Button>
 
+    {/* Remove Section Button inside a mapped section */}
+    {index > 0 && (
+        <Button
+            size="small"
+            type="button"
+            onClick={() => removeSection("sections1", index)}
+            className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
+        >
+            Remove Section
+        </Button>
+    )}
+</div>
 
-                                        </div>
-                                    ) : ""}
-                                    <div>
-                                        {/* Add Section Button */}
-                                        <Button
-                                            type="Button"
-                                            onClick={() => addSection("sections1")}
-                                            className="p-2 bg-gray-700 text-white rounded-md mt-4 hover:bg-green-600 focus:ring-2 focus:ring-green-500"
-                                        >
-                                            Add Another Section
-                                        </Button>
-                                    </div>
-                                </div>
                             </div>
 
                         ))}
@@ -1139,183 +1451,7 @@ const AddProjectForm = () => {
                             >
                                 Previous
                             </Button>
-                            <Button
-                                type="Button"
-                                onClick={nextStep}
-                                className="w-20 ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500"
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    </div>
-
-                )}
-
-                {step === 3 && (
-                    <div className="mt-10 bg-white p-6 rounded-md shadow-md">
-                        <h2 className="text-xl font-semibold mb-4">Section 2 Details</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Section 2 Title */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Section 2 Title</label>
-                                <input
-                                    type="text"
-                                    name="section2title"
-                                    value={formData.section2title}
-                                    onChange={handleChange}
-                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* Section 2 Subtitle */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Section 2 Subtitle</label>
-                                <input
-                                    type="text"
-                                    name="section2subtitle"
-                                    value={formData.section2subtitle}
-                                    onChange={handleChange}
-                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* Section 2 Description */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Section 2 Description</label>
-                                <textarea
-                                    name="section2desc"
-                                    value={formData.section2desc}
-                                    onChange={handleChange}
-                                    className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-                        {/* Dynamic Section 2 Fields */}
-                        <h3 className="text-lg font-semibold mt-6 mb-2">Sections 2</h3>
-                        {formData.sections2.map((section, index) => (
-                            <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
-
-                                <div>
-                                    {/* Section Image */}
-                                    <div className="mb-2">
-                                        <Typography variant="small" className="font-medium">
-                                            Section Image
-                                        </Typography>
-                                        <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
-                                            <input
-                                                type="file"
-                                                name="section2image"
-                                                onChange={(e) => handleImageUploadSection2(e, index)}
-                                                className="hidden"
-                                            />
-                                            <span className="text-gray-700">choose a file</span>
-                                        </label>
-                                    </div>
-
-                                    <div className="w-full  mb-4">
-                                        {/* Image Preview */}
-                                        {section.section2image ? (
-                                            <div className="relative flex group">
-                                                <img
-                                                    src={`${data.url}/Images/project/${section.section2image}`}
-                                                    alt={section.alt || `Gallery image ${index + 1}`}
-                                                    className="w-full h-50 object-cover rounded-lg"
-                                                />
-
-                                                {/* Remove Button (visible on hover) */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteImageSection2(index)}
-                                                    className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        ) : null}
-                                    </div>
-
-                                    {/* Section Alt Text */}
-                                    <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Image Alt</label>
-                                        <input
-                                            type="text"
-                                            name="section2alt"
-                                            value={section.section2alt}
-                                            onChange={(e) => handleSectionChange(e, "sections2", index)}
-                                            className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Section Name */}
-                                    <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Section Name</label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={section.name}
-                                            onChange={(e) => handleSectionChange(e, "sections2", index)}
-                                            className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-
-                                    {/* Section Description */}
-                                    <div className="mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">Description</label>
-                                        <textarea
-                                            name="desc"
-                                            value={section.desc}
-                                            onChange={(e) => handleSectionChange(e, "sections2", index)}
-                                            className="mt-2 p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-
-
-                                </div>
-                                <div className="flex justify-between">
-                                    {index > 0 ? (
-                                        <div>
-                                            {/* Remove Section Button */}
-                                            <Button
-                                                size="small"
-                                                type="Button"
-                                                onClick={() => removeSection("sections2", index)}
-                                                className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
-                                            >
-                                                Remove Section
-                                            </Button>
-
-
-                                        </div>
-                                    ) : ""}
-                                    <div>
-                                        {/* Add Section Button */}
-                                        <Button
-                                            type="Button"
-                                            onClick={() => addSection("sections2")}
-                                            className="p-2 bg-gray-700 text-white rounded-md mt-4 hover:bg-green-600 focus:ring-2 focus:ring-green-500"
-                                        >
-                                            Add Another Section
-                                        </Button>
-                                    </div>
-                                </div>
-
-                            </div>
-                        ))}
-
-
-
-                        {/* Navigation Buttons */}
-                        <div className="mt-6 flex justify-between">
-                            <Button
-                                type="Button"
-                                onClick={prevStep}
-                                className="p-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
-                            >
-                                Previous
-                            </Button>
-                            <Button
+                             <Button
                                 type="submit"
                                 className="w-40 ml-2 p-2 bg-gray-800 text-white rounded-md hover:bg-green-600 focus:ring-2 focus:ring-green-500"
                             >
@@ -1325,8 +1461,13 @@ const AddProjectForm = () => {
                     </div>
 
                 )}
+
+               
             </form>
         </div>
+            )}
+        </div>
+       
     );
 };
 

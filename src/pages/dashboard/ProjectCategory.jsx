@@ -9,7 +9,7 @@ import axios from 'axios';
 import { projectsData } from '@/data';
 
 export default function ProjectCategory() {
-  const {data, setloading,   ProjectCategories, GetProjectCategories, loading,  tostMsg, SetTostMsg, setEditProjectCategory, EditProjectCategory } = useContext(StoreContext);
+  const {data, Token, setloading,   ProjectCategories, GetProjectCategories, loading,  tostMsg, SetTostMsg, setEditProjectCategory, EditProjectCategory } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
@@ -71,27 +71,45 @@ export default function ProjectCategory() {
 
   
   const handleDelete = async (projectcategory) => {
-      try {
-        const isDltImage = await axios.delete(`${data.url}/api/admin/upload/category/${projectcategory.categoryimage}`)
-        if(isDltImage.data.success){
-            // toast.success(isDltImage.data.message)
-            const response = await axios.delete(`${data.url}/api/admin/projectcategory/${projectcategory._id}`)
-          if (response.data.success) {
-              toast.success(response.data.message)
-              GetProjectCategories();
+    try {
+        // Check if an image exists before attempting to delete it
+        if (projectcategory.categoryimage) {
+            const isDltImage = await axios.delete(`${data.url}/api/admin/upload/category/${projectcategory.categoryimage}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
 
-          }else{
-            toast.error(response.data.message)
-          }
-        }else{
-            toast.error(isDltImage.data.message)
+            if (!isDltImage.data.success) {
+                toast.error(isDltImage.data.message);
+                return; // Stop execution if image deletion fails
+            }
         }
 
-          
-      } catch (error) {
-         alert(error)
-      }
-  }
+        // Proceed to delete the category after image deletion (if any)
+        const response = await axios.delete(`${data.url}/api/admin/projectcategory/${projectcategory._id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+
+        if (response.data.success) {
+            toast.success(response.data.message);
+            GetProjectCategories();
+        } else {
+            toast.error(response.data.message);
+        }
+
+    } catch (error) {
+        console.error("Error deleting project category:", error);
+        toast.error("An error occurred while deleting.");
+    }
+};
+
 
   
 
@@ -165,8 +183,8 @@ export default function ProjectCategory() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={projectcategory.categoryimage ? `${data.url}/Images/category/${projectcategory.categoryimage}` : "/path/to/placeholder.jpg"}
-                                            alt={projectcategory.categoryimage}
+                                            src={projectcategory.categoryimage  ? `${data.url}/Images/category/${projectcategory.categoryimage}` : "No image"}
+                                            alt={projectcategory.categoryimage || 'No image'}
                                             size="lg"
                                             variant="rounded"
                                             className="w-20"

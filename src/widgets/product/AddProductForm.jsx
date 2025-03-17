@@ -3,14 +3,16 @@ import { Button, Typography } from "@material-tailwind/react"; // Assuming you'r
 import { StoreContext } from "@/context/Context";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Loader from "../loader/Loader";
+import { toast } from "react-toastify";
 
 const AddProductForm = () => {
     const navigate = useNavigate()
-    const { Project, data, SetTostMsg } = useContext(StoreContext)
+    const { Project,Token, data, GetDetailProjectData, SetTostMsg,  Isloading, setIsloading } = useContext(StoreContext)
     // State for form data
     const [formData, setFormData] = useState({
         projectid: "",
-        type:"",
+        type:"Product",
         name: "",
         desc: "",
         gallery: [{ galleryimage: "", alt: "" }],
@@ -114,6 +116,13 @@ const AddProductForm = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+      setIsloading(true)
+
+      if (formData.gallery.length === 0 || !formData.gallery.some(img => img.galleryimage)) {
+        toast.error("Product image is required.");
+        setIsloading(false);
+        return;
+    }
 
         try {
             // Prepare promises for uploading gallery, section1images, and section2images
@@ -123,10 +132,12 @@ const AddProductForm = () => {
                     formDataImage.append('file', image.galleryimage);
 
                     const response = await axios.post(`${data.url}/api/admin/upload/product`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
+                headers: {
+                  
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
                     return response.data.file; // Assuming the response contains the uploaded image URL
                 }
                 return image.galleryimage; // If no file, return the current value (could be URL)
@@ -138,10 +149,12 @@ const AddProductForm = () => {
                     formDataImage.append('file', amenity.amentiimage);
 
                     const response = await axios.post(`${data.url}/api/admin/upload/product`, formDataImage, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
+                headers: {
+                 
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
                     return response.data.file; // Assuming the response contains the uploaded image URL
                 }
                 return amenity.amentiimage; // If no file, return the current value (could be URL)
@@ -177,36 +190,49 @@ const AddProductForm = () => {
             };
 
             // Send the updated form data to your API
-            const response = await axios.post(`${data.url}/api/admin/product`, updatedFormData);
+            const response = await axios.post(`${data.url}/api/admin/product`, updatedFormData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             console.log(response)
             if (response.data.success) {
                 console.log('Project added successfully:', response.data);
                 SetTostMsg(response.data.message);
                navigate('/dashboard/product')
+                setIsloading(false)
                 // Handle success (e.g., redirect, show success message, etc.)
             } else {
                 console.error('Error adding project:', response.data);
+                 setIsloading(false)
                 // Handle error (e.g., show error message)
             }
         } catch (error) {
             console.error('Error in form submission:', error);
+            toast.error('error occured')
+             setIsloading(false)
             // Handle error (e.g., show error message)
         }
     };
     useEffect(() => {
         console.log(formData)
+        GetDetailProjectData()
     }, [formData])
 
     return (
         <div>
-            <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+            { Isloading ? (
+                <Loader/>
+            ):(
+  <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center">Add Product</h2>
-                <form onSubmit={handleSubmit} className=" max-h-[500px] overflow-y-auto">
-
+                <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
                     {/* Gallery Images Field */}
                     <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">
-                            Project Image
+                            Project Image*
                         </Typography>
                         <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                             <input
@@ -220,84 +246,50 @@ const AddProductForm = () => {
                             <span className="text-gray-700">Choose a file</span>
                         </label>
                         {/* Display Image Previews with Alt Inputs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {formData.gallery ? formData.gallery.map((image, index) => (
-                                <div
-                                    key={index}
-                                    className=" flex flex-col  space-y-2 group"
-                                >
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 ">
+                            {formData.gallery.map((image, index) => (
+                                <div key={index} className=" flex flex-col  space-y-2 group">
                                     {/* Image */}
-                                   {
-                                    image.galleryimage instanceof File  ? (
-                                       <div>
-                                       <div className="relative">
-                                       <img
-                                        src={image.galleryimage instanceof File ? URL.createObjectURL(image.galleryimage) : null}
-                                        alt={image.alt || "Uploaded image"}
-                                        className="h-32 w-full object-cover rounded-lg border"
-                                    />
-                                     {/* Remove Button (only visible on hover) */}
-                                     <button
-                                     type="button"
-                                     onClick={() => handleRemoveImage(index)}
-                                     className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                                 >
-                                     Remove
-                                 </button>
-                                       </div>
+                                    {image.galleryimage  ? (
+                                        <div>
+                                           <div className="relative">
+                                           <img
+                                             src={image.galleryimage instanceof File ? URL.createObjectURL(image.galleryimage) : `${data.url}/Images/product/${image.galleryimage}`} 
+                                                alt={image.alt || "Uploaded image"}
+                                                className="h-32 w-full object-cover rounded-lg border"
+                                            />
+                                            {/* Remove Button (only visible on hover) */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(index)}
+                                                className="absolute top-2 right-2 text-sm text-white bg-red-600 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                Remove
+                                            </button>
+                                           </div>
 
-                                 {/* Alt Text Input */}
-                                 <input
-                                     type="text"
-                                     placeholder="Enter alt text"
-                                     name="alt"
-                                     value={image.alt}
-                                     onChange={(e) => handleAltChange(index, e.target.value)}
-                                     className="mt-3 w-full px-2 py-1 border rounded-md"
-                                 />
-                                       </div>
-                                    ) : null
-                                   }
-
-                                   
+                                            {/* Alt Text Input */}
+                                            <input
+                                                type="text"
+                                                placeholder="Enter alt text"
+                                                name="alt"
+                                                value={image.alt}
+                                                onChange={(e) => handleAltChange(index, e.target.value)}
+                                                className="mt-3 w-full px-2 py-1 border rounded-md"
+                                            />
+                                        </div>
+                                    ) : null}
                                 </div>
-                            )) : null}
-
-
-
-
-
+                            ))}
                         </div>
                     </div>
 
-                    <div className="mb-4">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Select Type:
-                        </label>
-                        <select
-                            name="type"
-                            value={formData.type}
-                            onChange={handleChange}
-                            className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
-                            required
-                        >
-                            <option value="" >
-                                Select Type
-                            </option>
-                            <option value="Product">Product</option>
-                            <option value="Immersive amenties">Immersive amenties</option>
-                            <option value="Nearby">NearBy</option>
-                            </select>
-                            </div>
-                            
-
                     {/* Amenities Field */}
-                    <div className=" space-y-2  gap-5 mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{formData.type ==="Product"}Amenities</label>
+                    <div className="space-y-2 gap-5 mb-4">
+                        <label className="block text-sm font-medium text-gray-700">Amenities*</label>
                         {formData.amenties.map((amenity, index) => (
-                            <div key={index} className="mt-2 ">
+                            <div key={index} className="mt-2">
                                 <div className="mb-4">
-
                                     <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                         <input
                                             type="file"
@@ -310,18 +302,17 @@ const AddProductForm = () => {
                                         <span className="text-gray-700">Choose a file</span>
                                     </label>
                                 </div>
-
                                 {amenity.amentiimage instanceof File ? (
-                                    <div className="mb-4">
+                                     <div className="mb-4">
                                     {/* Image */}
                                     <img
-                                       src={amenity.amentiimage instanceof File ? URL.createObjectURL(amenity.amentiimage) : null}
-                                       alt={amenity.amentialt || "Uploaded image"}
-                                       className=" w-20 object-cover rounded-lg border"
-                                   />
-
-                               </div>
+                                        src={amenity.amentiimage instanceof File ? URL.createObjectURL(amenity.amentiimage) :  `${data.url}/Images/product/${amenity.amentiimage}`}
+                                        alt={amenity.amentialt || "Uploaded image"}
+                                        className="w-20 object-cover rounded-lg border"
+                                    />
+                                </div>
                                 ): null}
+                               
 
                                 <div className="">
                                     <input
@@ -347,40 +338,39 @@ const AddProductForm = () => {
 
                                 {/* Buttons */}
                                 <div className="flex justify-between">
-
                                     <div>
                                         <Button
                                             type="Button"
                                             size="small"
                                             onClick={addAmenity}
-                                            className="p-2 bg-gray-500 text-white  rounded-md mt-4 hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
+                                            className="p-2 bg-gray-500 text-white rounded-md mt-4 hover:bg-gray-600 focus:ring-2 focus:ring-gray-500"
                                         >
                                             Add Amenity
                                         </Button>
                                     </div>
-
-                                    <div>
+                                    {index > 0 ? (
+                                        <div>
                                         {/* Remove Section Button */}
                                         <Button
                                             size="small"
                                             type="Button"
                                             onClick={() => removeAmenity(index)}
-                                            className="p-2 bg-red-500 text-white  rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
+                                            className="p-2 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 focus:ring-2 focus:ring-red-500"
                                         >
                                             Remove
                                         </Button>
-
                                     </div>
+                                    ): null}
+                                    
                                 </div>
                             </div>
                         ))}
-
                     </div>
 
                     {/* Project ID Field */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Select Project:
+                            Select Project*:
                         </label>
                         <select
                             name="projectid"
@@ -389,28 +379,25 @@ const AddProductForm = () => {
                             className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
                             required
                         >
-                            <option value="" >
-                                Select Project
-                            </option>
+                            <option value="">Select Project</option>
                             {Project.map((p) => (
-                                <option key={p._id} value={p._id} >
+                                <option key={p._id} value={p._id}>
                                     {p.name}
                                 </option>
                             ))}
-
-
                         </select>
                     </div>
 
                     {/* Status Field */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Product Status</label>
+                        <label className="block text-sm font-medium text-gray-700">Product Status*</label>
                         <div className="flex items-center space-x-4 mt-2">
                             <label className="flex items-center">
                                 <input
                                     type="radio"
                                     name="status"
                                     value="true"
+                                    checked={formData.status === true}
                                     onChange={() => setFormData({ ...formData, status: true })}
                                     className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
                                 />
@@ -421,6 +408,7 @@ const AddProductForm = () => {
                                     type="radio"
                                     name="status"
                                     value="false"
+                                    checked={formData.status === false}
                                     onChange={() => setFormData({ ...formData, status: false })}
                                     className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
                                 />
@@ -429,13 +417,11 @@ const AddProductForm = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
-
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Name Field */}
                         <div className="mb-4">
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                Product Name
+                                Product Name*
                             </label>
                             <input
                                 type="text"
@@ -447,7 +433,6 @@ const AddProductForm = () => {
                                 required
                             />
                         </div>
-
 
                         {/* Video Field */}
                         <div className="mb-4">
@@ -463,10 +448,11 @@ const AddProductForm = () => {
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
+
                         {/* Description Field */}
                         <div className="mb-4">
                             <label htmlFor="desc" className="block text-sm font-medium text-gray-700">
-                                Product Description
+                                Product Description*
                             </label>
                             <textarea
                                 id="desc"
@@ -508,23 +494,21 @@ const AddProductForm = () => {
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
-
-
-
-
-
                     </div>
+
                     {/* Submit Button */}
                     <div>
                         <button
                             type="submit"
                             className="w-40 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                         >
-                            Submit
+                            Add
                         </button>
                     </div>
                 </form>
             </div>
+            )}
+           
         </div>
     );
 };

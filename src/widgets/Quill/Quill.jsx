@@ -68,25 +68,76 @@ const BlogEditor = ({ handleChange, detaildesc, placeholder }) => {
 //     });
 //   };
 
+  // const config = useMemo(
+  //   () => ({
+  //     readonly: false,
+  //     placeholder: placeholder || "Start typing...",
+  //     uploader: {
+  //       // insertImageAsBase64URI: true, // Keep Base64 conversion enabled
+  //       // images: {
+  //       //   upload: (files, callback) => handleImageUpload(files, callback), // Resize before Base64
+  //       // },
+  //     },
+  //     image: {
+  //       openOnDblClick: true, // Enable double-click to edit images
+  //       dragAndDrop: true, // Enable drag and drop
+  //     },
+  //     toolbarSticky: false,
+  //     buttons: "bold,italic,underline,|,image", // Ensure image upload button is present
+  //   }),
+  //   [placeholder]
+  // );
+
+
   const config = useMemo(
     () => ({
       readonly: false,
       placeholder: placeholder || "Start typing...",
-      uploader: {
-        // insertImageAsBase64URI: true, // Keep Base64 conversion enabled
-        // images: {
-        //   upload: (files, callback) => handleImageUpload(files, callback), // Resize before Base64
-        // },
+      toolbarSticky: false, // Keep toolbar fixed
+      toolbarAdaptive: false, // Disable adaptive toolbar (prevents extra options)
+
+      buttons: [
+        "paragraph", // Headings (h1 to h6)
+        "image",     // Image (URL only)
+        "link",      // Hyperlink
+        "ul",        // Bullet points (unordered list)
+        "ol",        // Numbered list (ordered list)
+        
+      ],
+
+      controls: {
+        paragraph: {
+          list: {
+            p: "Normal Text",
+            h1: "Heading 1",
+            h2: "Heading 2",
+            h3: "Heading 3",
+            h4: "Heading 4",
+            h5: "Heading 5",
+            h6: "Heading 6",
+          },
+        },
+        uploader: {
+                // insertImageAsBase64URI: true, // Keep Base64 conversion enabled
+                // images: {
+                //   upload: (files, callback) => handleImageUpload(files, callback), // Resize before Base64
+                // },
+              },
+              image: {
+                openOnDblClick: true, // Enable double-click to edit images
+                dragAndDrop: true, // Enable drag and drop
+              },
       },
-      image: {
-        openOnDblClick: true, // Enable double-click to edit images
-        dragAndDrop: true, // Enable drag and drop
-      },
-      toolbarSticky: false,
-      buttons: "bold,italic,underline,|,image", // Ensure image upload button is present
+
+      showXPathInStatusbar: false, // Hide XPath (bottom bar)
+      showCharsCounter: false,
+      showWordsCounter: false,
+      showPlaceholder: true,
     }),
     [placeholder]
   );
+
+  
 
   return (
     <div>

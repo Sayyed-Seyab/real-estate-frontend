@@ -9,7 +9,7 @@ import axios from 'axios';
 import { projectsData } from '@/data';
 
 export default function Project() {
-  const {data,EditProject, setEditProject, setloading, Project, GetDetailProjectData, loading,  tostMsg, SetTostMsg, setEditProjectCategory, EditProjectCategory } = useContext(StoreContext);
+  const {data, Token, EditProject, setEditProject, setloading, Project, GetDetailProjectData, loading,  tostMsg, SetTostMsg, setEditProjectCategory, EditProjectCategory } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
@@ -75,21 +75,39 @@ export default function Project() {
     try {
         // Step 1: Delete gallery images
         const galleryDeletePromises = project.gallery.map(async (img) => {
-            const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.galleryimage}`);
+            const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.galleryimage}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             return res.data; // Return success status
         });
 
         // // Step 2: Delete amenity images
         const section1DeletePromise = project.sections1.map(async (section1) => {
             section1.gallery.map(async (img)=>{
-                const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.section1image}`);
+                const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.section1image}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             return res.data; // Return success status
             })
             
         });
 
         const section2DeletePromise = project.sections2.map(async (section2) => {
-            const res = await axios.delete(`${data.url}/api/admin/upload/project/${section2.section2image}`);
+            const res = await axios.delete(`${data.url}/api/admin/upload/project/${section2.section2image}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             return res.data; // Return success status
         });
 
@@ -198,8 +216,8 @@ export default function Project() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={project.gallery ? `${data.url}/Images/project/${project.gallery[0].galleryimage}` : "/path/to/placeholder.jpg"}
-                                            alt={project.categoryimage}
+                                            src={project.gallery ? `${data.url}/Images/project/${project.gallery[0].galleryimage}` : "No image"}
+                                            alt={project.categoryimage|| 'No image'}
                                             size="lg"
                                             variant="rounded"
                                             className="w-20"

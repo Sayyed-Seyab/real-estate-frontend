@@ -9,7 +9,7 @@ import axios from 'axios';
 import { projectsData } from '@/data';
 
 export default function Product() {
-  const {data, setEditProduct, GetProjectProduct, setloading, ProjectProduct,  loading,  tostMsg, SetTostMsg, setEditProjectCategory, EditProjectCategory } = useContext(StoreContext);
+  const {data, setEditProduct,Token, GetProjectProduct, setloading, ProjectProduct,  loading,  tostMsg, SetTostMsg, setEditProjectCategory, EditProjectCategory } = useContext(StoreContext);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
@@ -70,13 +70,25 @@ export default function Product() {
     try {
         // Step 1: Delete gallery images
         const galleryDeletePromises = product.gallery.map(async (img) => {
-            const res = await axios.delete(`${data.url}/api/admin/upload/product/${img.galleryimage}`);
+            const res = await axios.delete(`${data.url}/api/admin/upload/product/${img.galleryimage}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             return res.data.success; // Return success status
         });
 
         // Step 2: Delete amenity images
         const amenityDeletePromises = product.amenties.map(async (amenity) => {
-            const res = await axios.delete(`${data.url}/api/admin/upload/product/${amenity.amentiimage}`);
+            const res = await axios.delete(`${data.url}/api/admin/upload/product/${amenity.amentiimage}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
             return res.data.success; // Return success status
         });
 
@@ -91,7 +103,13 @@ export default function Product() {
         }
 
         // Step 3: Delete the product only if all images are successfully deleted
-        const response = await axios.delete(`${data.url}/api/admin/product/${product._id}`);
+        const response = await axios.delete(`${data.url}/api/admin/product/${product._id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
         if (response.data.success) {
             GetProjectProduct(); // Refresh the data
             toast.success("Product deleted successfully");
@@ -178,8 +196,8 @@ export default function Product() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={product.gallery ? `${data.url}/Images/product/${product.gallery[0].galleryimage}` : "/path/to/placeholder.jpg"}
-                                            alt={product.categoryimage}
+                                            src={product.gallery ? `${data.url}/Images/product/${product.gallery[0].galleryimage}` : "No image"}
+                                            alt={product.categoryimage || 'No image'}
                                             size="lg"
                                             variant="rounded"
                                             className="w-20"
