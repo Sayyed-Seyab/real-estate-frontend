@@ -183,7 +183,7 @@ export default function ProjectCategory() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={projectcategory.categoryimage  ? `${data.url}/Images/category/${projectcategory.categoryimage}` : "No image"}
+                                            src={projectcategory.categoryimage  ? `${data.url}/Images/category/${projectcategory.categoryimage}` : "../../public/img/noimg.png"}
                                             alt={projectcategory.categoryimage || 'No image'}
                                             size="lg"
                                             variant="rounded"

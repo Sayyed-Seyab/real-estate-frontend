@@ -38,6 +38,7 @@ const AddProjectForm = () => {
         productdesc: "",
         nearby:"",
         productplantitle: "",
+        padfFile:"",
         sections1: [{file:"", sectiontype: "", title: "", subtitle: "", desc: "", gallery: [], section1alt: "" }],
         section2title: "",
         section2subtitle: "",
@@ -81,6 +82,7 @@ const AddProjectForm = () => {
                 productsubtitle: EditProject.productsubtitle || "",
                 productdesc: EditProject.productdesc || "",
                 productplantitle: EditProject.productplantitle || "",
+                 pdfFile: EditProject.pdfFile || "",
                 sections1: EditProject.sections1 || [{ sectiontype: "", title: "", subtitle: "", desc: "", gallery: [] }],
                 section2title: EditProject.section2title || "",
                 section2subtitle: EditProject.section2subtitle || "",
@@ -557,6 +559,66 @@ const validateStep2 = () => {
         });
     };
 
+
+     const UploadFile = async (e)=>{
+         const file = e.target.files[0]; // Get the selected file
+        if (!file) return;
+        const fileData = new FormData();
+        fileData.append("file", file);
+         try {
+            const response = await axios.post(`${data.url}/api/admin/upload/project`, fileData, {
+                headers: {
+                  
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+
+            if (response.data.success) {
+                const fileUrl = response.data.file; // Get uploaded file URL
+
+                setFormData((prevData) => ({
+                    ...prevData,
+                    pdfFile: fileUrl
+    }));
+                toast.success("File uploaded successfully!");
+                console.log("Uploaded File URL:", fileUrl);
+            } else {
+                toast.error("File upload failed.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Error uploading file.");
+        }
+    }
+
+
+      const handleDeletepdfFile = async () => {
+        if (!formData.pdfFile) {
+            alert("No file to delete");
+            return;
+        }
+
+        try {
+            const response = await axios.delete(`${data.url}/api/admin/upload/project/${formData.pdfFile}`, {
+                headers: {
+                   
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+
+            if (response.data.success) {
+                setFormData((prev) => ({ ...prev, pdfFile: "" })); // Remove file from formData
+                alert("File deleted successfully!");
+            } else {
+                alert("Error deleting file");
+            }
+        } catch (error) {
+            console.error("Delete Error:", error);
+            alert("Error deleting file");
+        }
+    };
 
 
  // Handle File Upload
@@ -1228,6 +1290,38 @@ const validateStep2 = () => {
                                  {errors.nearby && <p className="text-red-500 text-sm">{errors.nearby}</p>}
                             </div>
 
+                               {/* file */}
+                             <div className="mb-4">
+                                      <label className="block text-sm font-medium text-gray-700">Upload file (optional)</label>
+                                    {/* File Upload Input */}
+                                    <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.txt,.doc,.docx" // Restrict file types
+                                            onChange={(e)=>UploadFile(e)}
+                                            className="hidden"
+                                        />
+                                        <span className="text-gray-700">Upload File (PDF)</span>
+                                    </label>
+                                    {/* Show uploaded file URL */}
+                                    {formData.pdfFile && (
+                                        <div className="mt-4  mb-4">
+                                            <p className="text-green-600 font-medium">File Uploaded:</p>
+                                            <a href={`${data.url}/Files/${formData.pdfFile}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                                                {formData.pdfFile}
+                                            </a>
+                                            {/* Delete File Button */}
+                                            <button
+                                                onClick={handleDeletepdfFile}
+                                                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                                            >
+                                                Delete
+                                            </button>
+
+                                        </div>
+                                    )}
+                                </div>
+
                              {/* Product Description */}
                             {/* <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">Amenties Description</label>
@@ -1246,9 +1340,9 @@ const validateStep2 = () => {
                         {formData.sections1.map((section, index) => (
                             <div key={index} className="mb-6 p-4 rounded-lg shadow-sm">
                                   <div className="mb-4">
-                                     <label className="block text-sm font-medium text-gray-700">Upload file (optional)</label>
+                                     {/* <label className="block text-sm font-medium text-gray-700">Upload file (optional)</label> */}
                                     {/* File Upload Input */}
-                                    <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
+                                    {/* <label className="block w-full p-3 text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 focus:outline-none">
                                         <input
                                             type="file"
                                             accept=".pdf,.txt,.doc,.docx" // Restrict file types
@@ -1256,21 +1350,21 @@ const validateStep2 = () => {
                                             className="hidden"
                                         />
                                         <span className="text-gray-700">Upload File (PDF)</span>
-                                    </label>
+                                    </label> */}
                                     {/* Show uploaded file URL */}
                                     {section.file && (
                                         <div className="mt-4  mb-4">
-                                            <p className="text-green-600 font-medium">File Uploaded:</p>
+                                            {/* <p className="text-green-600 font-medium">File Uploaded:</p>
                                             <a href={`${data.url}/Files/${section.file}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
                                                 {section.file}
                                             </a>
                                             {/* Delete File Button */}
-                                            <button
+                                            {/* <button
                                                 onClick={handleDeleteFile}
                                                 className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                                             >
                                                 Delete
-                                            </button>
+                                            </button>  */}
                                         </div>
                                     )}
                                 </div>

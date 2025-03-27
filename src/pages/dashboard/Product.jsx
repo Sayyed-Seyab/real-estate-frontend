@@ -72,7 +72,7 @@ export default function Product() {
         const galleryDeletePromises = product.gallery.map(async (img) => {
             const res = await axios.delete(`${data.url}/api/admin/upload/product/${img.galleryimage}`, {
                 headers: {
-                    'Content-Type': 'application/json',
+                   
                      Authorization: `Bearer ${Token}`
                 },
                 withCredentials: true, // Enable credentials
@@ -84,7 +84,7 @@ export default function Product() {
         const amenityDeletePromises = product.amenties.map(async (amenity) => {
             const res = await axios.delete(`${data.url}/api/admin/upload/product/${amenity.amentiimage}`, {
                 headers: {
-                    'Content-Type': 'application/json',
+                  
                      Authorization: `Bearer ${Token}`
                 },
                 withCredentials: true, // Enable credentials
@@ -196,7 +196,7 @@ export default function Product() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={product.gallery ? `${data.url}/Images/product/${product.gallery[0].galleryimage}` : "No image"}
+                                            src={product.gallery ? `${data.url}/Images/product/${product.gallery[0].galleryimage}` : "../../public/img/noimg.png"}
                                             alt={product.categoryimage || 'No image'}
                                             size="lg"
                                             variant="rounded"

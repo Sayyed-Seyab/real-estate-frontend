@@ -33,7 +33,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
             color={sidenavType === "dark" ? "white" : "blue-gray"}
           >
             {/* {brandName} */}
-            Hasho real estate
+            Hashoo Properties
           </Typography>
         </Link>
         <IconButton

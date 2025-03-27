@@ -16,7 +16,7 @@ const AddProductPlan = () => {
         projectid: "",
         name: "",
         desc: "",
-        gallery: [{ galleryimage: "", alt: "" }],
+        gallery: [],
         video: "",
         plans: [{ name: "", desc: "" }],
         file: "",
@@ -25,6 +25,8 @@ const AddProductPlan = () => {
         metadesc: "",
         addedby: data.id,
     });
+    const [error, setError] = useState(null)
+  
 
     // Handle input changes
     const handleChange = (e) => {
@@ -108,6 +110,10 @@ const AddProductPlan = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if(formData.gallery.length == 0){
+            toast.error('Gallery is required')
+            return 
+        }
      setIsloading(true)
 
         try {
@@ -173,6 +179,7 @@ const AddProductPlan = () => {
         } catch (error) {
             console.error("Error in form submission:", error);
             toast.error('error occured')
+            console.log(error)
              setIsloading(false)
         }
     };

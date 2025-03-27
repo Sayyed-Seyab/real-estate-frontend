@@ -77,7 +77,7 @@ export default function Project() {
         const galleryDeletePromises = project.gallery.map(async (img) => {
             const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.galleryimage}`, {
                 headers: {
-                    'Content-Type': 'application/json',
+                 
                      Authorization: `Bearer ${Token}`
                 },
                 withCredentials: true, // Enable credentials
@@ -90,7 +90,7 @@ export default function Project() {
             section1.gallery.map(async (img)=>{
                 const res = await axios.delete(`${data.url}/api/admin/upload/project/${img.section1image}`, {
                 headers: {
-                    'Content-Type': 'application/json',
+                  
                      Authorization: `Bearer ${Token}`
                 },
                 withCredentials: true, // Enable credentials
@@ -103,7 +103,7 @@ export default function Project() {
         const section2DeletePromise = project.sections2.map(async (section2) => {
             const res = await axios.delete(`${data.url}/api/admin/upload/project/${section2.section2image}`, {
                 headers: {
-                    'Content-Type': 'application/json',
+                  
                      Authorization: `Bearer ${Token}`
                 },
                 withCredentials: true, // Enable credentials
@@ -115,21 +115,27 @@ export default function Project() {
         // // Wait for all delete requests to complete
         const galleryResults = await Promise.all(galleryDeletePromises);
         const section1Results = await Promise.all(section1DeletePromise);
-        const section2Results = await Promise.all(section2DeletePromise);
+        // const section2Results = await Promise.all(section2DeletePromise);
 
         console.log(galleryResults)
         console.log(section1Results)
-        console.log(section2Results)
+        // console.log(section2Results)
 
 
         // // Check if any delete operation failed
-        if (galleryResults.includes(false) || section1Results.includes(false) ||  section2Results.includes(false) ) {
+        if (galleryResults.includes(false) || section1Results.includes(false)  ) {
             toast.error("Failed to delete some images. Product deletion aborted.");
             return;
         }
 
         // // Step 3: Delete the product only if all images are successfully deleted
-        const response = await axios.delete(`${data.url}/api/admin/project/${project._id}`);
+        const response = await axios.delete(`${data.url}/api/admin/project/${project._id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
         console.log(response)
         if (response.data.success) {
             GetDetailProjectData(); // Refresh the data
@@ -216,7 +222,7 @@ export default function Project() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={project.gallery ? `${data.url}/Images/project/${project.gallery[0].galleryimage}` : "No image"}
+                                            src={project.gallery ? `${data.url}/Images/project/${project.gallery[0].galleryimage}` : "../../public/img/noimg.png"}
                                             alt={project.categoryimage|| 'No image'}
                                             size="lg"
                                             variant="rounded"

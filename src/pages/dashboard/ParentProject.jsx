@@ -161,7 +161,7 @@ export default function ParentProject() {
                             {/* Image */}
                              <td className="px-5 py-2 border-b border-blue-gray-50">
                              <Avatar
-                             src={parentproject.img ? `${data.url}/Images/parent/${parentproject.img}` : "No image"}
+                             src={parentproject.img ? `${data.url}/Images/parent/${parentproject.img}` : "../../public/img/noimg.png"}
                              alt={parentproject.alt || 'No image'}
                              size="lg"
                              variant="rounded"

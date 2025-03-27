@@ -25,9 +25,10 @@ const StoreContextProvider = (props) => {
     const [Token, setToken] = useState(null)
     const data = {
         id: "678f4b3b9ae39dee56d2fa44",
-        url: "https://152.42.237.126"
+        url: "http://localhost:4000"
     }
     //  152.42.237.126
+    // sub diomain https://hpapi.stashtechnologies.com
     // Fetch cities on component mount or when language changes
 
 

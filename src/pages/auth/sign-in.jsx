@@ -122,9 +122,10 @@ export function SignIn() {
     // Simulating an async check, you can replace it with actual async operations if needed
     setTimeout(() => {
         setloading(false);
-    }, 1000); // Adjust the delay as per your needs
+    }, 2000); // Adjust the delay as per your needs
    
     if(adminData){
+      
      navigate('/dashboard')
    }
 }, [adminData]);
@@ -136,7 +137,7 @@ export function SignIn() {
     }
 
   return (
-    <section className="m-8 flex gap-4">
+    <section className="m-8 flex justify-center gap-4">
       <div className="w-full lg:w-3/5 mt-24">
         <div className="text-center">
           <Typography variant="h2" className="font-bold mb-4">Sign In</Typography>
@@ -255,12 +256,12 @@ export function SignIn() {
         </form>
 
       </div>
-      <div className="w-2/5 h-full hidden lg:block">
+      {/* <div className="w-2/5 h-full hidden lg:block">
         <img
           src="/img/pattern.png"
           className="h-full w-full object-cover rounded-3xl"
         />
-      </div>
+      </div> */}
 
     </section>
   );

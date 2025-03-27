@@ -186,7 +186,7 @@ export default function ProductPlan() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={productplan.gallery ? `${data.url}/Images/productplan/${productplan.gallery[0].galleryimage}` : "No image"}
+                                            src={productplan.gallery ? `${data.url}/Images/productplan/${productplan.gallery[0].galleryimage}` : "../../public/img/noimg.png"}
                                             alt={productplan.gallery[0].alt || 'No image'}
                                             size="lg"
                                             variant="rounded"

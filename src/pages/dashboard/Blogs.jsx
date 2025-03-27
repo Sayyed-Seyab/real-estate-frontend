@@ -74,23 +74,31 @@ export default function Blog() {
       try {
         const isDltImage = await axios.delete(`${data.url}/api/admin/upload/blog/${blog.image}`, {
                 headers: {
-                    'Content-Type': 'application/json',
+                
                      Authorization: `Bearer ${Token}`
                 },
                 withCredentials: true, // Enable credentials
             })
         if(isDltImage.data.success){
             // toast.success(isDltImage.data.message)
-            const response = await axios.delete(`${data.url}/api/admin/blog/${blog._id}`)
+            const response = await axios.delete(`${data.url}/api/admin/blog/${blog._id}`, {
+                headers: {
+                  
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            })
           if (response.data.success) {
               toast.success(response.data.message)
               GetBlogs();
 
           }else{
             toast.error(response.data.message)
+            console.log('no success')
           }
         }else{
             toast.error(isDltImage.data.message)
+            console.log('no image')
         }
 
           
@@ -171,7 +179,7 @@ export default function Blog() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={blog.image ? `${data.url}/Images/blog/${blog.image}` : "no image"}
+                                            src={blog.image ? `${data.url}/Images/blog/${blog.image}` : "../../public/img/noimg.png"}
                                             alt={blog.alt || 'No image'}
                                             size="lg"
                                             variant="rounded"

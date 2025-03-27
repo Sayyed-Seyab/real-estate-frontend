@@ -158,23 +158,23 @@ const imagesToDeleteArray = [
         try {
 
               //      // 1️⃣ **Delete Images First**
-        if(imagesToDeleteArray.length > 0){
-            console.log(imagesToDeleteArray)
-          const response =   await Promise.all(
-                imagesToDeleteArray.map(async (file) => {
-                    console.log(file)
-                   const res =  await axios.delete(`${data.url}/api/admin/upload/productplan/${file.file}`, {
-                headers: {
+        // if(imagesToDeleteArray.length > 0){
+        //     console.log(imagesToDeleteArray)
+        //   const response =   await Promise.all(
+        //         imagesToDeleteArray.map(async (file) => {
+        //             console.log(file)
+        //            const res =  await axios.delete(`${data.url}/api/admin/upload/productplan/${file.file}`, {
+        //         headers: {
                    
-                     Authorization: `Bearer ${Token}`
-                },
-                withCredentials: true, // Enable credentials
-            });
-                   console.log(res)
-                })
-            );
+        //              Authorization: `Bearer ${Token}`
+        //         },
+        //         withCredentials: true, // Enable credentials
+        //     });
+        //            console.log(res)
+        //         })
+        //     );
 
-        }
+        // }
             // Prepare promises for uploading gallery and amenity images
             const galleryImagePromises = formData.gallery.map(async (image) => {
                 if (image.galleryimage instanceof File) {
