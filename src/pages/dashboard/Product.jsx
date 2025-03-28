@@ -196,7 +196,7 @@ export default function Product() {
                         <tr key={index}>
                             <td className="px-5 py-2 border-b border-blue-gray-50">
                                         <Avatar
-                                            src={product.gallery ? `${data.url}/Images/product/${product.gallery[0].galleryimage}` : "../../public/img/noimg.png"}
+                                            src={product.gallery ? `${data.url}/Images/product/${product.gallery[0].galleryimage}` :  "/img/noimg.png"}
                                             alt={product.categoryimage || 'No image'}
                                             size="lg"
                                             variant="rounded"
