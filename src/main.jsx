@@ -12,7 +12,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
 import { ThemeProvider } from "@material-tailwind/react";
 import { MaterialTailwindControllerProvider } from "@/context";
 import "../public/css/tailwind.css";
@@ -20,7 +20,7 @@ import StoreContextProvider from "./context/Context";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <ThemeProvider>
         <MaterialTailwindControllerProvider>
         <StoreContextProvider>
@@ -28,6 +28,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           </StoreContextProvider>
         </MaterialTailwindControllerProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 );
