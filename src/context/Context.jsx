@@ -1,6 +1,7 @@
 
 import axios from "axios";
 import { createContext, useEffect, useState } from "react"
+import { toast } from "react-toastify";
 
 
 export const StoreContext = createContext(null)
@@ -24,7 +25,7 @@ const StoreContextProvider = (props) => {
     const [adminData, setAdminData] = useState(null);
     const [Token, setToken] = useState(null)
     const data = {
-        id: "678f4b3b9ae39dee56d2fa44",
+        id: adminData?.id,
         url: "https://hpapi.stashtechnologies.com"
     }
     //  152.42.237.126
@@ -39,7 +40,7 @@ const StoreContextProvider = (props) => {
                     console.log(token)
                     setToken(token)
                     if (!token) {
-                        setError("Session expired! Please log in again.");
+                        toast.error("Session expired! Please log in again.");
                         return;
                     }
     
@@ -51,11 +52,11 @@ const StoreContextProvider = (props) => {
                     setAdminData(response.data.message);
                 } catch (err) {
                     if (err.response && err.response.status === 401) {
-                        setError("Session expired! Please log in again.");
+                        toast.error("Session expired! Please log in again.");
                         localStorage.removeItem("token");
                         window.location.href = "/login";
                     } else {
-                        setError("Failed to fetch admin data");
+                        toast.error("Failed to fetch admin data");
                     }
                 }
             };

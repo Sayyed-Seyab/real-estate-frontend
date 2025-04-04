@@ -14,6 +14,7 @@ const AddProjectForm = () => {
         gallery: ""
     })
     const [formData, setFormData] = useState({
+        template:null,
         categories: [],
         name: "",
         price: "",
@@ -439,7 +440,7 @@ const AddProjectForm = () => {
 
     const validateStep1 = () => {
         let newErrors = {};
-
+        if (!formData.template) newErrors.template = "Project type is required";
         if (!formData.name) newErrors.name = "Project Name is required";
         if (formData.gallery.length == 0) newErrors.gallery = "Project gallery is required";
         if (formData.categories.length == 0) newErrors.categories = "Project categories is required";
@@ -869,7 +870,28 @@ const AddProjectForm = () => {
                         {/* Project Type */}
                         {/* Project Categories */}
                         {/* Project Categories */}
-
+                         <div className="mb-4">
+                            <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
+                                Project type*
+                            </label>
+                            <select
+                                id="categories"
+                                name="template"
+                                value={formData.template} // Single selected category
+                                  onChange={handleChange}
+                                className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                                required
+                            >
+                                <option value="" >
+                                    Select project type
+                                </option>
+                             
+                                    <option  value='1'>Appartment</option>
+                                    <option  value='2'>Villas</option>
+                             
+                            </select>
+                            {errors.template && <p className="text-red-500 text-sm">{errors.template}</p>}
+                        </div>
                         <div className="mb-4">
                             <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
                                 Project Categories*

@@ -63,6 +63,7 @@ const AddProjectForm = () => {
         if (EditProject) {
             GetProjectCategories()
             setFormData({
+                template: EditProject.template || '',
                 categories: EditProject.categories[0].projectCategory.map(category => ({ id: category._id })) || [{ id: "" }],
                 name: EditProject.name || "",
                 price: EditProject.price || "",
@@ -1010,6 +1011,28 @@ const validateStep2 = () => {
                             {/* Project Type */}
                             {/* Project Categories */}
                             {/* Project Categories */}
+                             <div className="mb-4">
+                            <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
+                                Project type*
+                            </label>
+                            <select
+                                id="categories"
+                                name="template"
+                                value={formData.template} // Single selected category
+                                  onChange={handleChange}
+                                className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                                required
+                            >
+                                <option value="" >
+                                    Select project type
+                                </option>
+                             
+                                    <option  value='1'>Appartment</option>
+                                    <option  value='2'>Villas</option>
+                             
+                            </select>
+                            {errors.template && <p className="text-red-500 text-sm">{errors.template}</p>}
+                        </div>
 
                             <div className="mb-4">
                                 <label htmlFor="categories" className="block text-sm font-medium text-gray-700">

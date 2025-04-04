@@ -221,12 +221,42 @@ const AddProductForm = () => {
         GetDetailProjectData()
     }, [formData])
 
+    // const downloadFile = async()=>{
+    //     const fileName = "1743746019838-rrrr.pdf"
+    //    try {
+    //   const response = await fetch(`http://localhost:4000/api/admin/download/productplan/${fileName}`);
+
+    //   if (!response.ok) {
+    //     throw new Error("File not found or download failed.");
+    //   }
+
+    //   // Get the file as a blob
+    //   const blob = await response.blob();
+    //   const downloadUrl = window.URL.createObjectURL(blob);
+
+    //   // Create an anchor tag and trigger download
+    //   const anchor = document.createElement("a");
+    //   anchor.href = downloadUrl;
+    //   anchor.download = fileName;
+    //   document.body.appendChild(anchor);
+    //   anchor.click();
+    //   document.body.removeChild(anchor);
+
+    //   // Free memory
+    //   window.URL.revokeObjectURL(downloadUrl);
+    // } catch (error) {
+    //   console.error("Download Error:", error);
+    //   alert("Failed to download the file.");
+    // }
+    // }
+
     return (
         <div>
             { Isloading ? (
                 <Loader/>
             ):(
   <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
+    {/* <button onClick={downloadFile}>file</button> */}
                 <h2 className="text-xl font-bold mb-4 text-center">Add Product</h2>
                 <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
                     {/* Gallery Images Field */}
