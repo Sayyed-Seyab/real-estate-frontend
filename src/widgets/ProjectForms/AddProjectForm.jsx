@@ -869,7 +869,7 @@ const AddProjectForm = () => {
 
                         {/* Project Type */}
                         {/* Project Categories */}
-                        {/* Project Categories */}
+                        {/* Project type */}
                          <div className="mb-4">
                             <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
                                 Project type*
