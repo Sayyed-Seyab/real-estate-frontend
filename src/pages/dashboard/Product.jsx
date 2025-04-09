@@ -93,14 +93,14 @@ export default function Product() {
         });
 
         // Wait for all delete requests to complete
-        const galleryResults = await Promise.all(galleryDeletePromises);
-        const amenityResults = await Promise.all(amenityDeletePromises);
+        // const galleryResults = await Promise.all(galleryDeletePromises);
+        // const amenityResults = await Promise.all(amenityDeletePromises);
 
-        // Check if any delete operation failed
-        if (galleryResults.includes(false) || amenityResults.includes(false)) {
-            toast.error("Failed to delete some images. Product deletion aborted.");
-            return;
-        }
+        // // Check if any delete operation failed
+        // if (galleryResults.includes(false) || amenityResults.includes(false)) {
+        //     toast.error("Failed to delete some images. Product deletion aborted.");
+        //     return;
+        // }
 
         // Step 3: Delete the product only if all images are successfully deleted
         const response = await axios.delete(`${data.url}/api/admin/product/${product._id}`, {

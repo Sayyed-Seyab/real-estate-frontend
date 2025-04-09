@@ -1312,10 +1312,10 @@ const AddProjectForm = () => {
                                         </option>
                                         <option value="Hero">Hero</option>
                                         <option value="About">About</option>
-                                        <option value="Location">Location</option>
-                                        <option value="Background">Background</option>
-                                        <option value="Associations">Associations</option>
-                                        <option value="Amenties">Amenties</option>
+                                   {formData.template == 1 ? (<option value="Location">Location</option>): null} 
+                                      <option value="Background">Background</option>
+                                       {formData.template == 1 ? ( <option value="Associations">Associations</option>): null}  
+                                        {formData.template == 1 ? (<option value="Amenties">Amenties</option>): null}    
                                         <option value="Nearby">Nearby</option>
                                     </select>
                                     {errors[`sectiontype_${index}`] && (
