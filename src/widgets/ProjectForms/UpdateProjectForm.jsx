@@ -694,13 +694,46 @@ const validateStep2 = () => {
     };
 
 
+function cleanSections1(formData) {
+  if (!Array.isArray(formData.sections1)) return;
+
+  formData.sections1 = formData.sections1
+    .map(section => {
+      // Remove empty gallery images
+      if (Array.isArray(section.gallery)) {
+        section.gallery = section.gallery.filter(
+          img => img.section1image && img.section1image.trim() !== ''
+        );
+      }
+
+      return section;
+    })
+    .filter(section => {
+      const hasGallery = section.gallery && section.gallery.length > 0;
+      const hasContent =
+        (section.title && section.title.trim() !== '') ||
+        (section.subtitle && section.subtitle.trim() !== '') ||
+        (section.desc && section.desc.trim() !== '');
+
+      return hasGallery || hasContent;
+    });
+}
+
+
+
+
+
 
     const handleSubmit = async (e) => {
+   
+
         e.preventDefault();
         if(!validateStep2()){
              setIsloading(false)
             return;
         }
+             cleanSections1(formData);
+console.log(formData.sections1); // now has only the valid sections
         setIsloading(true)
 
 
