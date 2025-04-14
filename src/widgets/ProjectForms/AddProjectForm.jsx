@@ -31,7 +31,7 @@ const AddProjectForm = () => {
         amenitytitle: "",
         amenitydesc: "",
         productplantitle: "",
-        pdfFile:"",
+        pdfFile:[],
         sections1: [{ file:"", sectiontype: "", title: "", subtitle: "", desc: "", gallery: [], section1alt: "" }],
         section2title: " ",
         section2subtitle: " ",
@@ -546,37 +546,47 @@ const AddProjectForm = () => {
         });
     };
 
-    const UploadFile = async (e)=>{
-         const file = e.target.files[0]; // Get the selected file
-        if (!file) return;
-        const fileData = new FormData();
-        fileData.append("file", file);
-         try {
-            const response = await axios.post(`${data.url}/api/admin/upload/project`, fileData, {
-                headers: {
-                  
-                     Authorization: `Bearer ${Token}`
-                },
-                withCredentials: true, // Enable credentials
-            });
+   const UploadFile = async (e) => {
+  const files = e.target.files;
+  if (!files.length) return;
 
-            if (response.data.success) {
-                const fileUrl = response.data.file; // Get uploaded file URL
+  const uploadedFiles = [];
 
-                setFormData((prevData) => ({
-                    ...prevData,
-                    pdfFile: fileUrl
-    }));
-                toast.success("File uploaded successfully!");
-                console.log("Uploaded File URL:", fileUrl);
-            } else {
-                toast.error("File upload failed.");
-            }
-        } catch (error) {
-            console.error("Upload error:", error);
-            toast.error("Error uploading file.");
-        }
+  for (const file of files) {
+    const fileData = new FormData();
+    fileData.append("file", file);
+
+    try {
+      const response = await axios.post(`${data.url}/api/admin/upload/project`, fileData, {
+        headers: {
+          Authorization: `Bearer ${Token}`,
+        },
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        uploadedFiles.push({ file: response.data.file }); // Store as object
+        console.log("Uploaded:", response.data.file);
+      } else {
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error(`Error uploading ${file.name}`);
     }
+  }
+
+  // Update formData with new files
+  if (uploadedFiles.length > 0) {
+    setFormData((prevData) => ({
+      ...prevData,
+      pdfFile: [...prevData.pdfFile, ...uploadedFiles], // merge old + new
+    }));
+
+    toast.success(`${uploadedFiles.length} file(s) uploaded successfully!`);
+  }
+};
+
 
 
     // Handle File Upload
@@ -651,32 +661,62 @@ const AddProjectForm = () => {
     };
 
 
-     const handleDeletepdfFile = async () => {
-        if (!formData.pdfFile) {
-            alert("No file to delete");
-            return;
-        }
+     const handleDeletePdfFile = async (indexToDelete) => {
+  const fileToDelete = formData.pdfFile[indexToDelete]?.file;
+  if (!fileToDelete) {
+    alert("No file to delete");
+    return;
+  }
 
-        try {
-            const response = await axios.delete(`${data.url}/api/admin/upload/project/${formData.pdfFile}`, {
-                headers: {
-                   
-                     Authorization: `Bearer ${Token}`
-                },
-                withCredentials: true, // Enable credentials
-            });
+  try {
+    const response = await axios.delete(`${data.url}/api/admin/upload/project/${fileToDelete}`, {
+      headers: {
+        Authorization: `Bearer ${Token}`,
+      },
+      withCredentials: true,
+    });
 
-            if (response.data.success) {
-                setFormData((prev) => ({ ...prev, pdfFile: "" })); // Remove file from formData
-                alert("File deleted successfully!");
-            } else {
-                alert("Error deleting file");
-            }
-        } catch (error) {
-            console.error("Delete Error:", error);
-            alert("Error deleting file");
-        }
-    };
+    if (response.data.success) {
+      setFormData((prev) => ({
+        ...prev,
+        pdfFile: prev.pdfFile.filter((_, index) => index !== indexToDelete),
+      }));
+      alert("File deleted successfully!");
+    } else {
+      alert("Error deleting file");
+    }
+  } catch (error) {
+    console.error("Delete Error:", error);
+    alert("Error deleting file");
+  }
+};
+
+
+    function cleanSections1(formData) {
+  if (!Array.isArray(formData.sections1)) return;
+
+  formData.sections1 = formData.sections1
+    .map(section => {
+      // Remove empty gallery images
+      if (Array.isArray(section.gallery)) {
+        section.gallery = section.gallery.filter(
+          img => img.section1image && img.section1image.trim() !== ''
+        );
+      }
+
+      return section;
+    })
+    .filter(section => {
+      const hasGallery = section.gallery && section.gallery.length > 0;
+      const hasContent =
+        (section.title && section.title.trim() !== '') ||
+        (section.subtitle && section.subtitle.trim() !== '') ||
+        (section.desc && section.desc.trim() !== '');
+
+      return hasGallery || hasContent;
+    });
+}
+
 
 
 
@@ -690,6 +730,8 @@ const AddProjectForm = () => {
             return;
              setIsloading(false)
         }
+        cleanSections1(formData);
+
 
         try {
             // Prepare promises for uploading gallery, section1images, and section2images
@@ -1241,22 +1283,32 @@ const AddProjectForm = () => {
                                         <span className="text-gray-700">Upload File (PDF)</span>
                                     </label>
                                     {/* Show uploaded file URL */}
-                                    {formData.pdfFile && (
-                                        <div className="mt-4  mb-4">
-                                            <p className="text-green-600 font-medium">File Uploaded:</p>
-                                            <a href={`${data.url}/Files/${formData.pdfFile}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                                {formData.pdfFile}
-                                            </a>
-                                            {/* Delete File Button */}
-                                            <button
-                                                onClick={handleDeletepdfFile}
-                                                className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                                            >
-                                                Delete
-                                            </button>
+                                   {formData.pdfFile.length > 0 && (
+  <div className="mt-4 mb-4">
+    <p className="text-green-600 font-medium">Files Uploaded:</p>
+    <ul className="space-y-2">
+      {formData.pdfFile.map((fileObj, index) => (
+        <li key={index} className="flex items-center space-x-4">
+          <a
+            href={`${data.url}/Files/${fileObj.file}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            {fileObj.file}
+          </a>
+          <button
+            onClick={() => handleDeletePdfFile(index)}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
 
-                                        </div>
-                                    )}
                                 </div>
 
                         </div>
