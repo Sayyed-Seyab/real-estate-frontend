@@ -26,7 +26,7 @@ const StoreContextProvider = (props) => {
     const [Token, setToken] = useState(null)
     const data = {
         id: adminData?.id,
-        url: "http://localhost:4000"
+        url: "https://hpapi.stashtechnologies.com"//connectin
     }
     //  152.42.237.126
     // sub diomain https://hpapi.stashtechnologies.com
