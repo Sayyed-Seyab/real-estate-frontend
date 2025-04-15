@@ -42,6 +42,8 @@ export default function EditBlogForm() {
                 metadesc: EditBlog.metadesc || "",
             }));
             setPreviewImage(`${data.url}/Images/blog/${EditBlog.image}` || null);
+             setUploadedImages(EditBlog.uploadedImages || []); // <-- This line adds existing uploadedImages
+
   
         }else{
             navigate("/dashboard/blogs")
@@ -76,6 +78,29 @@ export default function EditBlogForm() {
     const uploaded = await Promise.all(uploadPromises);
     setUploadedImages([...uploadedImages, ...uploaded.filter(Boolean)]);
     console.log(uploadedImages)
+  };
+
+   const handleRemoveImage = async (imageUrl) => {
+
+    try {
+      const response = await axios.delete(`${data.url}/api/admin/upload/blog/${imageUrl}`, {
+                headers: {
+              
+                     Authorization: `Bearer ${Token}`
+                },
+                withCredentials: true, // Enable credentials
+            });
+      if (response.data.success) {
+         const updated = uploadedImages.filter((img) => img !== imageUrl);
+        setUploadedImages(updated);
+        toast.success("Image deleted.");    
+      } else {
+        toast.error("Failed to delete image.");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Error deleting image.");
+    }
   };
 
    const handleCopyUrl = (url) => {
@@ -140,6 +165,15 @@ export default function EditBlogForm() {
             setPreviewImage(URL.createObjectURL(file))
         }
     }
+     useEffect(()=>{
+    
+        },[uploadedImages])
+        console.log(uploadedImages)
+    
+    useEffect(() => {
+        console.log(formData)
+        console.log(formData.description)
+    }, [formData])
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -218,6 +252,7 @@ export default function EditBlogForm() {
                         metatitle: formData.metatitle,
                         metdesc: formData.metadesc,
                         addedby: formData.addedby,
+                        uploadedImages,
                     }, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -244,11 +279,8 @@ export default function EditBlogForm() {
              setIsloading(false)
         }
     };
-    
-    useEffect(() => {
-        console.log(formData)
-        console.log(formData.description)
-    }, [formData])
+
+   
     return (
         <div>
             { Isloading ? (
@@ -256,7 +288,7 @@ export default function EditBlogForm() {
             ): (
                  <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center">Add Blog</h2>
-                <form onSubmit={handleSubmit}>
+                <form >
                     <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">
                             Blog Image*
@@ -484,6 +516,7 @@ export default function EditBlogForm() {
                     {/* Submit Button */}
                     <div>
                         <button
+                        onClick={handleSubmit}
                             type="submit"
                             className="w-40 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                         >

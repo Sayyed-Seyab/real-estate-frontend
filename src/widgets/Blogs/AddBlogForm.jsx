@@ -148,11 +148,15 @@ export default function AddBlog() {
         }
     }
 
+    useEffect(()=>{
+
+    },[uploadedImages])
+    console.log(uploadedImages)
+
     const handleSubmit = async (e) => {
         e.preventDefault();
          setIsloading(true)
-        
-    
+   
         // Prepare FormData for file upload
         const uploadData = new FormData();
         uploadData.append("file", formData.image); // Ensure this matches your backend field
@@ -188,6 +192,7 @@ export default function AddBlog() {
                         metatitle: formData.metatitle,
                         metdesc: formData.metadesc,
                         addedby: formData.addedby,
+                        uploadedImages,
                     }, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -230,7 +235,7 @@ export default function AddBlog() {
           ):(
              <div className="w-full max-w-4xl m-2 mx-auto bg-white rounded-lg p-6">
                 <h2 className="text-xl font-bold mb-4 text-center">Add Blog</h2>
-                <form onSubmit={handleSubmit}>
+                <form >
                     <div className="space-y-2 mb-4">
                         <Typography variant="small" className="font-medium">
                             Blog Image*
@@ -453,6 +458,7 @@ export default function AddBlog() {
                     {/* Submit Button */}
                     <div>
                         <button
+                        onClick={handleSubmit}
                             type="submit"
                             className="w-40 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                         >
