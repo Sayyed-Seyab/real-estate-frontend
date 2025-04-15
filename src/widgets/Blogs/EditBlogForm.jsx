@@ -33,7 +33,7 @@ export default function EditBlogForm() {
             setFormData((prevFormData) => ({
                 ...prevFormData,
                 name: EditBlog.name || "",
-                categories: EditBlog.categories?.map((cat) => ({ id: cat._id })) || [],
+                category: EditBlog.category|| [],
                 description: EditBlog.description || "", 
                 detaildesc: EditBlog.detaildesc || "",
                 status: EditBlog.status !== undefined ?  EditBlog.status : true ,
@@ -244,7 +244,7 @@ export default function EditBlogForm() {
                     `${data.url}/api/admin/blog/${EditBlog._id}`,
                     {
                         name: formData.name,
-                         categories: formData.categories, // ✅ ADD THIS LINE
+                         category: formData.category, // ✅ ADD THIS LINE
                         image: formData.image, // Send file path
                         description: formData.description,
                         detaildesc: formData.detaildesc,
@@ -313,61 +313,28 @@ export default function EditBlogForm() {
                     </div>
 
 
-                     <div className="mb-4">
+                      <div className="mb-4">
                             <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
-                                Project Categories*
+                                Blog Category*
                             </label>
                             <select
                                 id="categories"
-                                name="categories"
-                                value={formData.selectedCategory || ""} // Single selected category
-                                onChange={handleCategoryChange}
+                                name="category"
+                                value={formData.category || ""} // Single selected category
+                                onChange={handleChange}
                                 className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
                               
                             >
                                 <option value="" disabled>
                                     Select Category
                                 </option>
-                                {ProjectCategories.map((category) => (
-                                    <option key={category._id} value={category._id}>
-                                        {category.name}
-                                    </option>
-                                ))}
+                                 <option value="Articles" >Articles</option>
+                                 <option value="Latest-news" >Latest-news</option>
                             </select>
                             {/* {errors.categories && <p className="text-red-500 text-sm">{errors.categories}</p>} */}
                         </div>
 
-                       {/* Selected Categories Display */}
-<div className="mt-4">
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Selected Categories
-  </label>
-  {formData.categories.length > 0 ? (
-    <div className="flex flex-wrap gap-2 mb-5">
-      {formData.categories.map((category, index) => {
-        const categoryData = ProjectCategories.find(c => c._id === category.id);
-        return (
-          <span
-            key={category.id}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full flex items-center"
-          >
-            {categoryData?.name || "Unknown"}
-            <button
-              type="button"
-              onClick={() => removeCategory(index)}
-              className="ml-2 text-sm font-bold text-red-500 hover:text-red-700"
-              title="Remove category"
-            >
-              &times;
-            </button>
-          </span>
-        );
-      })}
-    </div>
-  ) : (
-    <p className="text-sm text-gray-500 italic">No categories selected.</p>
-  )}
-</div>
+   
 
 
                    

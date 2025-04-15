@@ -15,7 +15,7 @@ export default function AddBlog() {
     console.log(Token)
     const [formData, setFormData] = useState({
         image: "",
-        categories: [],
+        category: "",
         name: "",
         description: "",
         detaildesc:"",
@@ -185,7 +185,7 @@ export default function AddBlog() {
                     {
                         name: formData.name,
                         image: uploadResponse.data.file, // Send file path
-                         categories: formData.categories, // ✅ ADD THIS LINE
+                         category: formData.category, // ✅ ADD THIS LINE
                         description: formData.description,
                         detaildesc: formData.detaildesc,
                         status: formData.status,
@@ -261,54 +261,27 @@ export default function AddBlog() {
 
                     <div className="mb-4">
                             <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
-                                Project Categories*
+                                Blog Category*
                             </label>
                             <select
                                 id="categories"
-                                name="categories"
-                                value={formData.selectedCategory || ""} // Single selected category
-                                onChange={handleCategoryChange}
+                                name="category"
+                                value={formData.category || ""} // Single selected category
+                                onChange={handleChange}
                                 className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
                               
                             >
                                 <option value="" disabled>
                                     Select Category
                                 </option>
-                                {ProjectCategories.map((category) => (
-                                    <option key={category._id} value={category._id}>
-                                        {category.name}
-                                    </option>
-                                ))}
+                                 <option value="Articles" >Articles</option>
+                                 <option value="Latest-news" >Latest-news</option>
                             </select>
                             {/* {errors.categories && <p className="text-red-500 text-sm">{errors.categories}</p>} */}
                         </div>
 
-                        {/* Display selected categories */}
-                        {formData.categories.length > 0 ?
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Selected Categories
-                                </label>
-                                <div className="flex flex-wrap gap-2 mb-5">
-                                    {formData.categories.map((category, index) => (
-                                        <span
-                                            key={category.id}
-                                            className="px-4 py-2 mb-2 bg-gray-300 text-gray-700 rounded-full flex items-center"
-                                        >
-                                            {ProjectCategories.find(c => c._id === category.id)?.name}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeCategory(index)}
-                                                className="ml-2 text-sm  font-bold text-red-500"
-                                            >
-                                                &times;
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-
-                            </div>
-                            : null}
+                       
+                         
 
                    
                     {/* Name Field */}
