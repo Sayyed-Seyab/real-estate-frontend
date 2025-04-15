@@ -565,7 +565,7 @@ const AddProjectForm = () => {
       });
 
       if (response.data.success) {
-        uploadedFiles.push({ file: response.data.file }); // Store as object
+        uploadedFiles.push({ file: response.data.file}); // Store as object
         console.log("Uploaded:", response.data.file);
       } else {
         toast.error(`Failed to upload ${file.name}`);
@@ -723,6 +723,9 @@ const AddProjectForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        formData.pdfFile = formData.pdfFile.filter(file => file.file);
+console.log(formData.pdfFile)
         setIsloading(true)
 
         if (!validateStep2()) {
@@ -1283,26 +1286,29 @@ const AddProjectForm = () => {
                                         <span className="text-gray-700">Upload File (PDF)</span>
                                     </label>
                                     {/* Show uploaded file URL */}
-                                   {formData.pdfFile.length > 0 && (
-  <div className="mt-4 mb-4">
+    {formData.pdfFile.length > 0 && (
+  <div className="mt-4 mb-4 w-60">
     <p className="text-green-600 font-medium">Files Uploaded:</p>
     <ul className="space-y-2">
       {formData.pdfFile.map((fileObj, index) => (
-        <li key={index} className="flex items-center space-x-4">
-          <a
-            href={`${data.url}/Files/${fileObj.file}`}
+        <li key={index} className="flex  space-x-4">
+        <div className="flex gap-2 ">
+             <div className=""> <a
+             href={`${data.url}/Images/project/${fileObj.file}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 underline"
+            className="text-blue-500 text-xs w-20 underline"
           >
             {fileObj.file}
-          </a>
-          <button
-            onClick={() => handleDeletePdfFile(index)}
-            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+         
+          </a></div>
+         <div> <button
+             onClick={() => handleDeletePdfFile(index)}
+            className="bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-red-600 transition"
           >
             Delete
-          </button>
+          </button></div>
+        </div>
         </li>
       ))}
     </ul>

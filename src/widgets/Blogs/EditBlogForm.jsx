@@ -9,13 +9,14 @@ import Loader from "../loader/Loader";
 
 
 export default function EditBlogForm() {
-    const { data, Token, SetTostMsg, tostMsg, Projectparent, setEditBlog, EditBlog,  Isloading, setIsloading} = useContext(StoreContext)
+    const { data, Token, SetTostMsg, tostMsg, Projectparent, setEditBlog,ProjectCategories,GetProjectCategories, EditBlog,  Isloading, setIsloading} = useContext(StoreContext)
     const [Btnloading, setBtnloading] = useState(false)
     const [PreviewImage, setPreviewImage] = useState()
     const navigate = useNavigate()
     console.log(data)
     const [formData, setFormData] = useState({
         image: "",
+         categories: [],
         name: "",
         description: "",
         detaildesc:"",
@@ -24,13 +25,15 @@ export default function EditBlogForm() {
         metadesc:"",
         addedby: data.id,
     });
-
+  const [uploadedImages, setUploadedImages] = useState([]);
 
     useState(()=>{
         if(EditBlog){
+            GetProjectCategories();
             setFormData((prevFormData) => ({
                 ...prevFormData,
                 name: EditBlog.name || "",
+                categories: EditBlog.categories?.map((cat) => ({ id: cat._id })) || [],
                 description: EditBlog.description || "", 
                 detaildesc: EditBlog.detaildesc || "",
                 status: EditBlog.status !== undefined ?  EditBlog.status : true ,
@@ -44,6 +47,71 @@ export default function EditBlogForm() {
             navigate("/dashboard/blogs")
         }
     },[])
+
+    const handleImageUpload = async (e) => {
+    const files = e.target.files;
+    if (!files.length) return;
+
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const response = await axios.post(`${data.url}/api/admin/upload/blog`, formData, {
+          headers: { "Content-Type": "multipart/form-data",
+             Authorization: `Bearer ${Token}`,
+           },
+             
+        });
+        if (response.data.success) {
+          return response.data.file;
+        } else {
+          toast.error("Image upload failed.");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error("Error uploading image.");
+      }
+    });
+
+    const uploaded = await Promise.all(uploadPromises);
+    setUploadedImages([...uploadedImages, ...uploaded.filter(Boolean)]);
+    console.log(uploadedImages)
+  };
+
+   const handleCopyUrl = (url) => {
+      navigator.clipboard.writeText(`${data.url}/Images/blog/${url}`);
+      toast.success("Image URL copied!");
+    };
+
+
+     // Handle category selection change
+    const handleCategoryChange = (e) => {
+        const selectedCategoryId = e.target.value;
+
+        if (selectedCategoryId) {
+            const alreadyexistCategory = formData.categories.some((cat) => cat.id === selectedCategoryId)
+            console.log(selectedCategoryId)
+            if (!alreadyexistCategory) {
+                setFormData({
+                    ...formData,
+                    categories: [
+                        ...formData.categories,
+                        { id: selectedCategoryId },
+                    ]
+                })
+            }
+        }
+    };
+
+    // Remove selected category from the list
+    const removeCategory = (index) => {
+        const updatedCategories = formData.categories.filter((_, i) => i !== index);
+        setFormData({
+            ...formData,
+            categories: updatedCategories,
+        });
+    };
+
     
 
     const handleChange = (e) => {
@@ -142,6 +210,7 @@ export default function EditBlogForm() {
                     `${data.url}/api/admin/blog/${EditBlog._id}`,
                     {
                         name: formData.name,
+                         categories: formData.categories, // ✅ ADD THIS LINE
                         image: formData.image, // Send file path
                         description: formData.description,
                         detaildesc: formData.detaildesc,
@@ -211,6 +280,64 @@ export default function EditBlogForm() {
                         )}
                     </div>
 
+
+                     <div className="mb-4">
+                            <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
+                                Project Categories*
+                            </label>
+                            <select
+                                id="categories"
+                                name="categories"
+                                value={formData.selectedCategory || ""} // Single selected category
+                                onChange={handleCategoryChange}
+                                className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                              
+                            >
+                                <option value="" disabled>
+                                    Select Category
+                                </option>
+                                {ProjectCategories.map((category) => (
+                                    <option key={category._id} value={category._id}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {/* {errors.categories && <p className="text-red-500 text-sm">{errors.categories}</p>} */}
+                        </div>
+
+                       {/* Selected Categories Display */}
+<div className="mt-4">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Selected Categories
+  </label>
+  {formData.categories.length > 0 ? (
+    <div className="flex flex-wrap gap-2 mb-5">
+      {formData.categories.map((category, index) => {
+        const categoryData = ProjectCategories.find(c => c._id === category.id);
+        return (
+          <span
+            key={category.id}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full flex items-center"
+          >
+            {categoryData?.name || "Unknown"}
+            <button
+              type="button"
+              onClick={() => removeCategory(index)}
+              className="ml-2 text-sm font-bold text-red-500 hover:text-red-700"
+              title="Remove category"
+            >
+              &times;
+            </button>
+          </span>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-sm text-gray-500 italic">No categories selected.</p>
+  )}
+</div>
+
+
                    
                     {/* Name Field */}
                     <div className="mb-4">
@@ -243,6 +370,44 @@ export default function EditBlogForm() {
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             ></textarea>
                         </div>
+
+                                          {/* Upload Images */}
+                              <div className="mb-4">
+                                <Typography variant="small" className="font-medium">Get image Url</Typography>
+                                <label className="block p-3 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                  <input
+                                   type="file"
+                                   accept="image/*"
+                                   multiple
+                                   onChange={handleImageUpload}
+                                   className="hidden"
+                                    />
+                                    
+                                  <span className="text-gray-700">Choose files</span>
+                                </label>
+                              </div>
+
+                               {/* Display Uploaded Images */}
+      {uploadedImages.length > 0 && (
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {uploadedImages.map((image, index) => (
+            <div key={index} className="relative border p-2 rounded-md">
+              <img src={`${data.url}/Images/blog/${image}`} alt="Uploaded" className="w-full h-32 object-cover rounded" />
+              <div className="mt-2 flex justify-between items-center">
+                <input type="text" value={`${data.url}/Images/blog/${image}`} readOnly className="w-full p-1 text-xs border rounded" />
+               <button
+  type="button" // Add this to prevent form submission
+  onClick={() => handleCopyUrl(image)}
+  className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded"
+>
+  Copy
+</button>
+                <button onClick={() => handleRemoveImage(image)} className="ml-2 bg-red-500 text-white px-2 py-1 text-xs rounded">Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
                     {/* Description Field */}
                     <div className="mb-4">

@@ -9,12 +9,13 @@ import Loader from "../loader/Loader";
 
 
 export default function AddBlog() {
-    const { data, Token, SetTostMsg, tostMsg, Projectparent,  Isloading, setIsloading } = useContext(StoreContext)
+    const { data, Token, SetTostMsg, tostMsg, Projectparent,ProjectCategories,GetProjectCategories,  Isloading, setIsloading } = useContext(StoreContext)
     const [Btnloading, setBtnloading] = useState(false)
     const navigate = useNavigate()
     console.log(Token)
     const [formData, setFormData] = useState({
         image: "",
+        categories: [],
         name: "",
         description: "",
         detaildesc:"",
@@ -26,6 +27,40 @@ export default function AddBlog() {
     const [PreviewImage, setPreviewImage] = useState()
 
     const [uploadedImages, setUploadedImages] = useState([]);
+
+    useEffect(()=>{
+
+      GetProjectCategories();
+
+    },[])
+
+    // Handle category selection change
+    const handleCategoryChange = (e) => {
+        const selectedCategoryId = e.target.value;
+
+        if (selectedCategoryId) {
+            const alreadyexistCategory = formData.categories.some((cat) => cat.id === selectedCategoryId)
+            console.log(selectedCategoryId)
+            if (!alreadyexistCategory) {
+                setFormData({
+                    ...formData,
+                    categories: [
+                        ...formData.categories,
+                        { id: selectedCategoryId },
+                    ]
+                })
+            }
+        }
+    };
+
+    // Remove selected category from the list
+    const removeCategory = (index) => {
+        const updatedCategories = formData.categories.filter((_, i) => i !== index);
+        setFormData({
+            ...formData,
+            categories: updatedCategories,
+        });
+    };
 
   const handleImageUpload = async (e) => {
     const files = e.target.files;
@@ -146,6 +181,7 @@ export default function AddBlog() {
                     {
                         name: formData.name,
                         image: uploadResponse.data.file, // Send file path
+                         categories: formData.categories, // ✅ ADD THIS LINE
                         description: formData.description,
                         detaildesc: formData.detaildesc,
                         status: formData.status,
@@ -218,6 +254,57 @@ export default function AddBlog() {
                         )}
                     </div>
 
+                    <div className="mb-4">
+                            <label htmlFor="categories" className="block text-sm font-medium text-gray-700">
+                                Project Categories*
+                            </label>
+                            <select
+                                id="categories"
+                                name="categories"
+                                value={formData.selectedCategory || ""} // Single selected category
+                                onChange={handleCategoryChange}
+                                className="w-full text-gray-700 border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring focus:ring-gray-300"
+                              
+                            >
+                                <option value="" disabled>
+                                    Select Category
+                                </option>
+                                {ProjectCategories.map((category) => (
+                                    <option key={category._id} value={category._id}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {/* {errors.categories && <p className="text-red-500 text-sm">{errors.categories}</p>} */}
+                        </div>
+
+                        {/* Display selected categories */}
+                        {formData.categories.length > 0 ?
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Selected Categories
+                                </label>
+                                <div className="flex flex-wrap gap-2 mb-5">
+                                    {formData.categories.map((category, index) => (
+                                        <span
+                                            key={category.id}
+                                            className="px-4 py-2 mb-2 bg-gray-300 text-gray-700 rounded-full flex items-center"
+                                        >
+                                            {ProjectCategories.find(c => c._id === category.id)?.name}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeCategory(index)}
+                                                className="ml-2 text-sm  font-bold text-red-500"
+                                            >
+                                                &times;
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+
+                            </div>
+                            : null}
+
                    
                     {/* Name Field */}
                     <div className="mb-4">
@@ -275,7 +362,7 @@ export default function AddBlog() {
             <div key={index} className="relative border p-2 rounded-md">
               <img src={`${data.url}/Images/blog/${image}`} alt="Uploaded" className="w-full h-32 object-cover rounded" />
               <div className="mt-2 flex justify-between items-center">
-                <input type="text" value={image} readOnly className="w-full p-1 text-xs border rounded" />
+                <input type="text" value={`${data.url}/Images/blog/${image}`} readOnly className="w-full p-1 text-xs border rounded" />
                <button
   type="button" // Add this to prevent form submission
   onClick={() => handleCopyUrl(image)}

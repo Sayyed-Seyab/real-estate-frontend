@@ -562,7 +562,7 @@ const validateStep2 = () => {
 
 
        const UploadFile = async (e) => {
-  const files = e.target.files;
+  const files = e.target.files
   if (!files.length) return;
 
   const uploadedFiles = [];
@@ -580,8 +580,8 @@ const validateStep2 = () => {
       });
 
       if (response.data.success) {
-        uploadedFiles.push({ file: response.data.file }); // Store as object
-        console.log("Uploaded:", response.data.file);
+        uploadedFiles.push({ file: response.data.file}); // Store as object
+        console.log("Uploaded:",  response.data.file );
       } else {
         toast.error(`Failed to upload ${file.name}`);
       }
@@ -609,6 +609,7 @@ const validateStep2 = () => {
     alert("No file to delete");
     return;
   }
+  alert(id)
 
   try {
     const response = await axios.delete(`${data.url}/api/admin/upload/project/${id}`, {
@@ -746,6 +747,9 @@ function cleanSections1(formData) {
         }
              cleanSections1(formData);
 console.log(formData.sections1); // now has only the valid sections
+// Clean up invalid PDFs
+formData.pdfFile = formData.pdfFile.filter(file => file.file);
+console.log(formData.pdfFile)
         setIsloading(true)
 
 
@@ -1373,25 +1377,28 @@ console.log(formData.sections1); // now has only the valid sections
                                     </label>
                                                                    {/* Show uploaded file URL */}
                                    {formData.pdfFile.length > 0 && (
-  <div className="mt-4 mb-4">
+  <div className="mt-4 mb-4 w-60">
     <p className="text-green-600 font-medium">Files Uploaded:</p>
     <ul className="space-y-2">
       {formData.pdfFile.map((fileObj, index) => (
-        <li key={index} className="flex items-center space-x-4">
-          <a
-            href={`${data.url}/Files/${fileObj.file}`}
+        <li key={index} className="flex  space-x-4">
+        <div className="flex gap-2 ">
+             <div className=""> <a
+             href={`${data.url}/Images/project/${fileObj.file}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 underline"
+            className="text-blue-500 text-xs w-20 underline"
           >
             {fileObj.file}
-          </a>
-          <button
+         
+          </a></div>
+         <div> <button
              onClick={() => handleDeletePdfFile(index)}
-            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+            className="bg-red-500 text-white text-xs py-1 px-3  rounded hover:bg-red-600 transition"
           >
             Delete
-          </button>
+          </button></div>
+        </div>
         </li>
       ))}
     </ul>
