@@ -1081,8 +1081,8 @@ console.log(formData.pdfFile)
                                     Select project type
                                 </option>
                              
-                                    <option  value='1'>Appartment</option>
-                                    <option  value='2'>Villas</option>
+                                    <option  value='1'>Template 1</option>
+                                    <option  value='2'>Template 2</option>
                              
                             </select>
                             {errors.template && <p className="text-red-500 text-sm">{errors.template}</p>}
