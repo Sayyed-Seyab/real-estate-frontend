@@ -1080,7 +1080,7 @@ console.log(formData.pdfFile)
                                 <option value="" >
                                     Select project type
                                 </option>
-                             
+                             {/* chnages */}
                                     <option  value='1'>Template 1</option>
                                     <option  value='2'>Template 2</option>
                              
