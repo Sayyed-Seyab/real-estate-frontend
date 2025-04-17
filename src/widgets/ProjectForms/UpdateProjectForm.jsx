@@ -64,7 +64,10 @@ const AddProjectForm = () => {
             GetProjectCategories()
             setFormData({
                 template: EditProject.template || '',
-                categories: EditProject.categories[0].projectCategory.map(category => ({ id: category._id })) || [{ id: "" }],
+               categories: EditProject.categories.flatMap(item => 
+  item.projectCategory.map(cat => ({ id: cat._id }))
+) || [{ id: "" }],
+
                 name: EditProject.name || "",
                 price: EditProject.price || "",
                 area: EditProject.area || "",
@@ -104,6 +107,7 @@ const AddProjectForm = () => {
 
         console.log(ImagesToDlt);
     }, [EditProject, data.url, ImagesToDlt]);
+    console.log(formData.categories)
 
 console.log(EditProject)
 
@@ -738,11 +742,12 @@ function cleanSections1(formData) {
 
 
     const handleSubmit = async (e) => {
-   
+  
 
         e.preventDefault();
         if(!validateStep2()){
              setIsloading(false)
+              console.log('herer')
             return;
         }
              cleanSections1(formData);
